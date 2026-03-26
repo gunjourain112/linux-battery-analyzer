@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -14,6 +15,11 @@ type BatteryPoint struct {
 	Time       time.Time
 	Percentage float64
 	State      string
+}
+
+type PowerEvent struct {
+	Time time.Time
+	Kind string // sleep, resume, shutdown, boot
 }
 
 func main() {
@@ -40,14 +46,68 @@ func main() {
 		os.Exit(1)
 	}
 
-	if len(points) == 0 {
-		fmt.Println("no battery history found")
-		return
+	events, err := loadPowerEvents(since, until)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "warning: could not load journal:", err)
 	}
 
+	fmt.Println("=== battery ===")
 	for _, p := range points {
 		fmt.Printf("%s  %5.1f%%  %s\n", p.Time.Format("2006-01-02 15:04"), p.Percentage, p.State)
 	}
+
+	fmt.Println("\n=== power events ===")
+	for _, e := range events {
+		fmt.Printf("%s  %s\n", e.Time.Format("2006-01-02 15:04"), e.Kind)
+	}
+}
+
+func loadPowerEvents(since, until time.Time) ([]PowerEvent, error) {
+	args := []string{"--no-pager", "-o", "short-iso"}
+	if !since.IsZero() {
+		args = append(args, "--since", since.Format("2006-01-02"))
+	}
+	if !until.IsZero() {
+		args = append(args, "--until", until.Format("2006-01-02 23:59:59"))
+	}
+
+	out, err := exec.Command("journalctl", args...).Output()
+	if err != nil {
+		return nil, err
+	}
+
+	var events []PowerEvent
+	scanner := bufio.NewScanner(strings.NewReader(string(out)))
+	for scanner.Scan() {
+		line := scanner.Text()
+		if len(line) < 25 {
+			continue
+		}
+		t, err := time.ParseInLocation("2006-01-02T15:04:05-0700", line[:25], time.Local)
+		if err != nil {
+			continue
+		}
+		low := strings.ToLower(line)
+		var kind string
+		switch {
+		case strings.Contains(low, "suspending system"),
+			strings.Contains(low, "pm: suspend entry"):
+			kind = "sleep"
+		case strings.Contains(low, "system resumed"),
+			strings.Contains(low, "pm: early resume"):
+			kind = "resume"
+		case strings.Contains(low, "powering off"),
+			strings.Contains(low, "reached target power-off"):
+			kind = "shutdown"
+		case strings.Contains(low, "startup finished in"):
+			kind = "boot"
+		}
+		if kind == "" {
+			continue
+		}
+		events = append(events, PowerEvent{Time: t, Kind: kind})
+	}
+	return events, nil
 }
 
 func loadHistory(since, until time.Time) ([]BatteryPoint, error) {

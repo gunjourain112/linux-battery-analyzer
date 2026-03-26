@@ -1,0 +1,18 @@
+# binaries
+notebook-battery-analyzer
+app
+/dist/
+
+# go
+*.test
+*.out
+vendor/
+
+# os
+.DS_Store
+Thumbs.db
+
+# ide
+.vscode/
+.idea/
+*.swp

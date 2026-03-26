@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -20,6 +21,13 @@ type BatteryPoint struct {
 type PowerEvent struct {
 	Time time.Time
 	Kind string // sleep, resume, shutdown, boot
+}
+
+type Session struct {
+	Start    time.Time
+	End      time.Time
+	StartPct float64
+	EndPct   float64
 }
 
 func main() {
@@ -51,15 +59,81 @@ func main() {
 		fmt.Fprintln(os.Stderr, "warning: could not load journal:", err)
 	}
 
-	fmt.Println("=== battery ===")
-	for _, p := range points {
-		fmt.Printf("%s  %5.1f%%  %s\n", p.Time.Format("2006-01-02 15:04"), p.Percentage, p.State)
+	sessions := buildSessions(events, points, since, until)
+
+	fmt.Println("=== sessions ===")
+	for i, s := range sessions {
+		dur := s.End.Sub(s.Start)
+		drain := s.StartPct - s.EndPct
+		fmt.Printf("[%d] %s ~ %s  (%dh%02dm)  %.0f%% → %.0f%%  (%.1f%% drain)\n",
+			i+1,
+			s.Start.Format("01/02 15:04"),
+			s.End.Format("15:04"),
+			int(dur.Hours()), int(dur.Minutes())%60,
+			s.StartPct, s.EndPct, drain,
+		)
+	}
+}
+
+func buildSessions(events []PowerEvent, points []BatteryPoint, since, until time.Time) []Session {
+	// 이벤트 + 배터리 포인트 시간 기준 정렬
+	sort.Slice(events, func(i, j int) bool { return events[i].Time.Before(events[j].Time) })
+
+	var sessions []Session
+	var start time.Time
+
+	if !since.IsZero() {
+		start = since
 	}
 
-	fmt.Println("\n=== power events ===")
-	for _, e := range events {
-		fmt.Printf("%s  %s\n", e.Time.Format("2006-01-02 15:04"), e.Kind)
+	for _, ev := range events {
+		switch ev.Kind {
+		case "sleep", "shutdown":
+			if !start.IsZero() {
+				s := Session{Start: start, End: ev.Time}
+				s.StartPct = batteryAt(points, start)
+				s.EndPct = batteryAt(points, ev.Time)
+				if s.End.Sub(s.Start) > time.Minute {
+					sessions = append(sessions, s)
+				}
+				start = time.Time{}
+			}
+		case "resume", "boot":
+			if start.IsZero() {
+				start = ev.Time
+			}
+		}
 	}
+
+	// 마지막 세션이 until까지 열려있으면 닫기
+	if !start.IsZero() {
+		end := time.Now()
+		if !until.IsZero() && until.Before(end) {
+			end = until
+		}
+		s := Session{Start: start, End: end}
+		s.StartPct = batteryAt(points, start)
+		s.EndPct = batteryAt(points, end)
+		sessions = append(sessions, s)
+	}
+
+	return sessions
+}
+
+func batteryAt(points []BatteryPoint, t time.Time) float64 {
+	best := 0.0
+	bestDelta := time.Duration(1<<63 - 1)
+	for _, p := range points {
+		d := p.Time.Sub(t)
+		if d < 0 {
+			d = -d
+		}
+		if d < bestDelta {
+			bestDelta = d
+			best = p.Percentage
+		}
+	}
+	return best
 }
 
 func loadPowerEvents(since, until time.Time) ([]PowerEvent, error) {

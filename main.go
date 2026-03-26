@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -18,7 +17,24 @@ type BatteryPoint struct {
 }
 
 func main() {
-	points, err := loadHistory()
+	var since, until time.Time
+
+	if len(os.Args) >= 3 {
+		var err error
+		since, err = time.ParseInLocation("2006-01-02", os.Args[1], time.Local)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "invalid since date:", os.Args[1])
+			os.Exit(1)
+		}
+		until, err = time.ParseInLocation("2006-01-02", os.Args[2], time.Local)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "invalid until date:", os.Args[2])
+			os.Exit(1)
+		}
+		until = until.Add(24*time.Hour - time.Second)
+	}
+
+	points, err := loadHistory(since, until)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "failed to load history:", err)
 		os.Exit(1)
@@ -34,7 +50,7 @@ func main() {
 	}
 }
 
-func loadHistory() ([]BatteryPoint, error) {
+func loadHistory(since, until time.Time) ([]BatteryPoint, error) {
 	files, err := filepath.Glob("/var/lib/upower/history-charge-*.dat")
 	if err != nil || len(files) == 0 {
 		return nil, fmt.Errorf("no upower history files found")
@@ -42,7 +58,7 @@ func loadHistory() ([]BatteryPoint, error) {
 
 	var points []BatteryPoint
 	for _, f := range files {
-		pts, err := parseHistoryFile(f)
+		pts, err := parseHistoryFile(f, since, until)
 		if err != nil {
 			continue
 		}
@@ -51,7 +67,7 @@ func loadHistory() ([]BatteryPoint, error) {
 	return points, nil
 }
 
-func parseHistoryFile(path string) ([]BatteryPoint, error) {
+func parseHistoryFile(path string, since, until time.Time) ([]BatteryPoint, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, err
@@ -80,24 +96,18 @@ func parseHistoryFile(path string) ([]BatteryPoint, error) {
 		if parts[2] == "unknown" || pct <= 0 {
 			continue
 		}
+		t := time.Unix(epoch, 0)
+		if !since.IsZero() && t.Before(since) {
+			continue
+		}
+		if !until.IsZero() && t.After(until) {
+			continue
+		}
 		points = append(points, BatteryPoint{
-			Time:       time.Unix(epoch, 0),
+			Time:       t,
 			Percentage: pct,
 			State:      parts[2],
 		})
 	}
 	return points, scanner.Err()
-}
-
-func getBatteryDevice() (string, error) {
-	out, err := exec.Command("upower", "-e").Output()
-	if err != nil {
-		return "", err
-	}
-	for _, line := range strings.Split(strings.TrimSpace(string(out)), "\n") {
-		if strings.Contains(line, "BAT") {
-			return line, nil
-		}
-	}
-	return "", fmt.Errorf("no battery found")
 }

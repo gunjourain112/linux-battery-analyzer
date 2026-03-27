@@ -9,55 +9,45 @@ import (
 	"github.com/gunjourain112/notebook-battery-analyzer/internal/domain"
 	"github.com/gunjourain112/notebook-battery-analyzer/internal/infrastructure"
 	"github.com/gunjourain112/notebook-battery-analyzer/internal/service"
+	"github.com/gunjourain112/notebook-battery-analyzer/internal/ui/tui"
 )
 
 func main() {
-	var since, until time.Time
-
-	if len(os.Args) >= 3 {
-		var err error
-		since, err = time.ParseInLocation("2006-01-02", os.Args[1], time.Local)
-		if err != nil {
-			fmt.Fprintln(os.Stderr, "invalid since date:", os.Args[1])
-			os.Exit(1)
-		}
-		until, err = time.ParseInLocation("2006-01-02", os.Args[2], time.Local)
-		if err != nil {
-			fmt.Fprintln(os.Stderr, "invalid until date:", os.Args[2])
-			os.Exit(1)
-		}
-		until = until.Add(24*time.Hour - time.Second)
+	conf, err := loadConfig()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
 	}
 
-	points, err := infrastructure.LoadHistory(since, until)
+	points, err := infrastructure.LoadHistory(conf.Since, conf.Until)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "failed to load history:", err)
 		os.Exit(1)
 	}
 
-	events, err := infrastructure.LoadPowerEvents(since, until)
+	events, err := infrastructure.LoadPowerEvents(conf.Since, conf.Until)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "warning: could not load journal:", err)
 	}
 
-	processes, err := infrastructure.LoadProcessUsage(since, until)
+	processes, err := infrastructure.LoadProcessUsage(conf.Since, conf.Until)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "warning: could not load resource logs:", err)
 	}
 
-	rates, err := infrastructure.LoadRateHistory(since, until)
+	rates, err := infrastructure.LoadRateHistory(conf.Since, conf.Until)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "warning: could not load rate logs:", err)
 	}
 
-	thermal, err := infrastructure.LoadThermalStats(since, until)
+	thermal, err := infrastructure.LoadThermalStats(conf.Since, conf.Until)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "warning: could not load thermal logs:", err)
 	}
 
 	specs := infrastructure.LoadSpecs()
 
-	sessions := service.BuildSessions(events, points, since, until)
+	sessions := service.BuildSessions(events, points, conf.Since, conf.Until)
 	profile := service.BuildDischargeProfile(rates)
 	impacts := service.BuildProcessImpacts(processes, rates)
 	charging := service.BuildChargingSessions(points, rates)
@@ -90,6 +80,26 @@ func main() {
 	printSpecs(specs)
 	printThermals(thermal)
 	printProcesses(processes)
+}
+
+func loadConfig() (domain.Config, error) {
+	if len(os.Args) >= 3 {
+		since, err := time.ParseInLocation("2006-01-02", os.Args[1], time.Local)
+		if err != nil {
+			return domain.Config{}, fmt.Errorf("invalid since date: %s", os.Args[1])
+		}
+		until, err := time.ParseInLocation("2006-01-02", os.Args[2], time.Local)
+		if err != nil {
+			return domain.Config{}, fmt.Errorf("invalid until date: %s", os.Args[2])
+		}
+		return domain.Config{
+			Language: "ko",
+			Since:    since,
+			Until:    until.Add(24*time.Hour - time.Second),
+		}, nil
+	}
+
+	return tui.Run()
 }
 
 func printSummary(sessions []domain.Session) {

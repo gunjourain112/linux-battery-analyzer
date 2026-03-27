@@ -2,6 +2,12 @@ package domain
 
 import "time"
 
+type Config struct {
+	Language string
+	Since    time.Time
+	Until    time.Time
+}
+
 type BatteryPoint struct {
 	Time       time.Time
 	Percentage float64

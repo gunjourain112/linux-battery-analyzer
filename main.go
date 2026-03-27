@@ -25,6 +25,16 @@ type Session struct {
 	EndPct   float64
 }
 
+type ProcessUsage struct {
+	Time    time.Time
+	Name    string
+	RawName string
+	CPUTime float64
+	MemPeak float64
+	RawCPU  string
+	RawMem  string
+}
+
 func main() {
 	var since, until time.Time
 
@@ -54,6 +64,11 @@ func main() {
 		fmt.Fprintln(os.Stderr, "warning: could not load journal:", err)
 	}
 
+	processes, err := loadProcessUsage(since, until)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "warning: could not load resource logs:", err)
+	}
+
 	sessions := buildSessions(events, points, since, until)
 
 	fmt.Println("=== sessions ===")
@@ -74,6 +89,7 @@ func main() {
 	}
 
 	printSummary(sessions)
+	printProcesses(processes)
 }
 
 func buildSessions(events []PowerEvent, points []BatteryPoint, since, until time.Time) []Session {
@@ -181,5 +197,30 @@ func printSummary(sessions []Session) {
 		)
 	} else {
 		fmt.Println("worst session: --")
+	}
+}
+
+func printProcesses(processes []ProcessUsage) {
+	if len(processes) == 0 {
+		return
+	}
+
+	sort.Slice(processes, func(i, j int) bool {
+		if processes[i].CPUTime == processes[j].CPUTime {
+			return processes[i].MemPeak > processes[j].MemPeak
+		}
+		return processes[i].CPUTime > processes[j].CPUTime
+	})
+
+	limit := 5
+	if len(processes) < limit {
+		limit = len(processes)
+	}
+
+	fmt.Println()
+	fmt.Println("=== processes ===")
+	for i := 0; i < limit; i++ {
+		p := processes[i]
+		fmt.Printf("[%d] %s  cpu %.0fs  mem %.1fM\n", i+1, p.Name, p.CPUTime, p.MemPeak)
 	}
 }

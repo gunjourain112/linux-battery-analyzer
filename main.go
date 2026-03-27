@@ -1,14 +1,9 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"os"
-	"os/exec"
-	"path/filepath"
 	"sort"
-	"strconv"
-	"strings"
 	"time"
 )
 
@@ -126,22 +121,6 @@ func buildSessions(events []PowerEvent, points []BatteryPoint, since, until time
 	return sessions
 }
 
-func batteryAt(points []BatteryPoint, t time.Time) float64 {
-	best := 0.0
-	bestDelta := time.Duration(1<<63 - 1)
-	for _, p := range points {
-		d := p.Time.Sub(t)
-		if d < 0 {
-			d = -d
-		}
-		if d < bestDelta {
-			bestDelta = d
-			best = p.Percentage
-		}
-	}
-	return best
-}
-
 func dischargeRate(s Session) float64 {
 	dur := s.End.Sub(s.Start).Hours()
 	if dur <= 0 {
@@ -203,114 +182,4 @@ func printSummary(sessions []Session) {
 	} else {
 		fmt.Println("worst session: --")
 	}
-}
-
-func loadPowerEvents(since, until time.Time) ([]PowerEvent, error) {
-	args := []string{"--no-pager", "-o", "short-iso"}
-	if !since.IsZero() {
-		args = append(args, "--since", since.Format("2006-01-02"))
-	}
-	if !until.IsZero() {
-		args = append(args, "--until", until.Format("2006-01-02 23:59:59"))
-	}
-
-	out, err := exec.Command("journalctl", args...).Output()
-	if err != nil {
-		return nil, err
-	}
-
-	var events []PowerEvent
-	scanner := bufio.NewScanner(strings.NewReader(string(out)))
-	for scanner.Scan() {
-		line := scanner.Text()
-		if len(line) < 25 {
-			continue
-		}
-		t, err := time.ParseInLocation("2006-01-02T15:04:05-0700", line[:25], time.Local)
-		if err != nil {
-			continue
-		}
-		low := strings.ToLower(line)
-		var kind string
-		switch {
-		case strings.Contains(low, "suspending system"),
-			strings.Contains(low, "pm: suspend entry"):
-			kind = "sleep"
-		case strings.Contains(low, "system resumed"),
-			strings.Contains(low, "pm: early resume"):
-			kind = "resume"
-		case strings.Contains(low, "powering off"),
-			strings.Contains(low, "reached target power-off"):
-			kind = "shutdown"
-		case strings.Contains(low, "startup finished in"):
-			kind = "boot"
-		}
-		if kind == "" {
-			continue
-		}
-		events = append(events, PowerEvent{Time: t, Kind: kind})
-	}
-	return events, nil
-}
-
-func loadHistory(since, until time.Time) ([]BatteryPoint, error) {
-	files, err := filepath.Glob("/var/lib/upower/history-charge-*.dat")
-	if err != nil || len(files) == 0 {
-		return nil, fmt.Errorf("no upower history files found")
-	}
-
-	var points []BatteryPoint
-	for _, f := range files {
-		pts, err := parseHistoryFile(f, since, until)
-		if err != nil {
-			continue
-		}
-		points = append(points, pts...)
-	}
-	return points, nil
-}
-
-func parseHistoryFile(path string, since, until time.Time) ([]BatteryPoint, error) {
-	f, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-
-	var points []BatteryPoint
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		if line == "" || strings.HasPrefix(line, "#") {
-			continue
-		}
-		parts := strings.Split(line, "\t")
-		if len(parts) < 3 {
-			continue
-		}
-		epoch, err := strconv.ParseInt(parts[0], 10, 64)
-		if err != nil {
-			continue
-		}
-		pct, err := strconv.ParseFloat(parts[1], 64)
-		if err != nil {
-			continue
-		}
-		if parts[2] == "unknown" || pct <= 0 {
-			continue
-		}
-		t := time.Unix(epoch, 0)
-		if !since.IsZero() && t.Before(since) {
-			continue
-		}
-		if !until.IsZero() && t.After(until) {
-			continue
-		}
-		points = append(points, BatteryPoint{
-			Time:       t,
-			Percentage: pct,
-			State:      parts[2],
-		})
-	}
-	return points, scanner.Err()
 }

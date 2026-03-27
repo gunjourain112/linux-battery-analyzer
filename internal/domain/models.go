@@ -8,6 +8,12 @@ type BatteryPoint struct {
 	State      string
 }
 
+type RatePoint struct {
+	Time  time.Time
+	Watts float64
+	State string
+}
+
 type PowerEvent struct {
 	Time time.Time
 	Kind string
@@ -19,6 +25,15 @@ type Session struct {
 	StartPct float64
 	EndPct   float64
 }
+
+type LoadLevel int
+
+const (
+	LoadLevelUnknown LoadLevel = iota
+	LoadLevelLight
+	LoadLevelMedium
+	LoadLevelHeavy
+)
 
 type ProcessUsage struct {
 	Time    time.Time
@@ -37,6 +52,19 @@ type ThermalStats struct {
 	Avg   int
 }
 
+type LoadBucket struct {
+	Label    string
+	Count    int
+	Ratio    float64
+	AvgWatts float64
+	EstHours float64
+}
+
+type DischargeProfile struct {
+	Buckets    []LoadBucket
+	TotalCount int
+}
+
 type HardwareSpecs struct {
 	OS      string
 	Device  string
@@ -47,4 +75,10 @@ type HardwareSpecs struct {
 
 func (s HardwareSpecs) IsEmpty() bool {
 	return s.OS == "" && s.Device == "" && s.CPU == "" && s.RAM == "" && s.Battery == ""
+}
+
+type ProcessImpact struct {
+	Process    ProcessUsage
+	DrainWatts float64
+	Level      LoadLevel
 }

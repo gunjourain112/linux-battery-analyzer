@@ -45,6 +45,11 @@ func main() {
 		fmt.Fprintln(os.Stderr, "warning: could not load resource logs:", err)
 	}
 
+	rates, err := infrastructure.LoadRateHistory(since, until)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "warning: could not load rate logs:", err)
+	}
+
 	thermal, err := infrastructure.LoadThermalStats(since, until)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "warning: could not load thermal logs:", err)
@@ -53,6 +58,8 @@ func main() {
 	specs := infrastructure.LoadSpecs()
 
 	sessions := service.BuildSessions(events, points, since, until)
+	profile := service.BuildDischargeProfile(rates)
+	impacts := service.BuildProcessImpacts(processes, rates)
 
 	fmt.Println("=== sessions ===")
 	for i, s := range sessions {
@@ -72,6 +79,8 @@ func main() {
 	}
 
 	printSummary(sessions)
+	printProfile(profile)
+	printImpacts(impacts)
 	printSpecs(specs)
 	printThermals(thermal)
 	printProcesses(processes)
@@ -153,6 +162,39 @@ func printProcesses(processes []domain.ProcessUsage) {
 	}
 }
 
+func printProfile(profile domain.DischargeProfile) {
+	if profile.TotalCount == 0 {
+		return
+	}
+
+	fmt.Println()
+	fmt.Println("=== discharge profile ===")
+	for _, b := range profile.Buckets {
+		if b.Count == 0 {
+			continue
+		}
+		fmt.Printf("%s: %d (%.0f%%, avg %.1fW)\n", b.Label, b.Count, b.Ratio, b.AvgWatts)
+	}
+}
+
+func printImpacts(impacts []domain.ProcessImpact) {
+	if len(impacts) == 0 {
+		return
+	}
+
+	limit := 5
+	if len(impacts) < limit {
+		limit = len(impacts)
+	}
+
+	fmt.Println()
+	fmt.Println("=== process impacts ===")
+	for i := 0; i < limit; i++ {
+		p := impacts[i]
+		fmt.Printf("[%d] %s  %.1fW  %s\n", i+1, p.Process.Name, p.DrainWatts, levelLabel(p.Level))
+	}
+}
+
 func printSpecs(specs domain.HardwareSpecs) {
 	if specs.IsEmpty() {
 		return
@@ -176,4 +218,17 @@ func printThermals(stats domain.ThermalStats) {
 	fmt.Println("=== thermal ===")
 	fmt.Printf("samples: %d\n", stats.Count)
 	fmt.Printf("min/max/avg: %d / %d / %d C\n", stats.Min, stats.Max, stats.Avg)
+}
+
+func levelLabel(level domain.LoadLevel) string {
+	switch level {
+	case domain.LoadLevelLight:
+		return "light"
+	case domain.LoadLevelMedium:
+		return "medium"
+	case domain.LoadLevelHeavy:
+		return "heavy"
+	default:
+		return "unknown"
+	}
 }

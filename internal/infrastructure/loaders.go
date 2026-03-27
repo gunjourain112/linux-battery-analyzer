@@ -36,6 +36,23 @@ func LoadHistory(since, until time.Time) ([]domain.BatteryPoint, error) {
 	return points, nil
 }
 
+func LoadRateHistory(since, until time.Time) ([]domain.RatePoint, error) {
+	files, err := filepathGlob("/var/lib/upower/history-rate-*.dat")
+	if err != nil || len(files) == 0 {
+		return nil, nil
+	}
+
+	var points []domain.RatePoint
+	for _, f := range files {
+		pts, err := parseRateFile(f, since, until)
+		if err != nil {
+			continue
+		}
+		points = append(points, pts...)
+	}
+	return points, nil
+}
+
 func LoadPowerEvents(since, until time.Time) ([]domain.PowerEvent, error) {
 	args := []string{"--no-pager", "-o", "short-iso"}
 	if !since.IsZero() {
@@ -307,6 +324,48 @@ func parseHistoryFile(path string, since, until time.Time) ([]domain.BatteryPoin
 			Time:       t,
 			Percentage: pct,
 			State:      parts[2],
+		})
+	}
+	return points, scanner.Err()
+}
+
+func parseRateFile(path string, since, until time.Time) ([]domain.RatePoint, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	var points []domain.RatePoint
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		parts := strings.Split(line, "\t")
+		if len(parts) < 3 {
+			continue
+		}
+		epoch, err := strconv.ParseInt(parts[0], 10, 64)
+		if err != nil {
+			continue
+		}
+		watts, err := strconv.ParseFloat(parts[1], 64)
+		if err != nil {
+			continue
+		}
+		t := time.Unix(epoch, 0)
+		if !since.IsZero() && t.Before(since) {
+			continue
+		}
+		if !until.IsZero() && t.After(until) {
+			continue
+		}
+		points = append(points, domain.RatePoint{
+			Time:  t,
+			Watts: watts,
+			State: parts[2],
 		})
 	}
 	return points, scanner.Err()

@@ -65,6 +65,7 @@ func main() {
 	for i, s := range sessions {
 		dur := s.End.Sub(s.Start)
 		drain := s.StartPct - s.EndPct
+		rate := dischargeRate(s)
 		fmt.Printf("[%d] %s ~ %s  (%dh%02dm)  %.0f%% → %.0f%%  (%.1f%% drain)\n",
 			i+1,
 			s.Start.Format("01/02 15:04"),
@@ -72,7 +73,12 @@ func main() {
 			int(dur.Hours()), int(dur.Minutes())%60,
 			s.StartPct, s.EndPct, drain,
 		)
+		if rate > 0 {
+			fmt.Printf("    rate: %.2f%%/h\n", rate)
+		}
 	}
+
+	printSummary(sessions)
 }
 
 func buildSessions(events []PowerEvent, points []BatteryPoint, since, until time.Time) []Session {
@@ -134,6 +140,69 @@ func batteryAt(points []BatteryPoint, t time.Time) float64 {
 		}
 	}
 	return best
+}
+
+func dischargeRate(s Session) float64 {
+	dur := s.End.Sub(s.Start).Hours()
+	if dur <= 0 {
+		return 0
+	}
+	drain := s.StartPct - s.EndPct
+	if drain <= 0 {
+		return 0
+	}
+	return drain / dur
+}
+
+func printSummary(sessions []Session) {
+	var totalHours float64
+	var totalDrain float64
+	var worst Session
+	var worstRate float64
+	var hasWorst bool
+
+	for _, s := range sessions {
+		rate := dischargeRate(s)
+		if rate <= 0 {
+			continue
+		}
+
+		hours := s.End.Sub(s.Start).Hours()
+		totalHours += hours
+		totalDrain += s.StartPct - s.EndPct
+
+		if !hasWorst || rate > worstRate {
+			hasWorst = true
+			worst = s
+			worstRate = rate
+		}
+	}
+
+	fmt.Println()
+	fmt.Println("=== summary ===")
+	fmt.Printf("sessions: %d\n", len(sessions))
+
+	if totalHours == 0 {
+		fmt.Println("avg discharge: --")
+		fmt.Println("worst session: --")
+		return
+	}
+
+	avgRate := totalDrain / totalHours
+	fmt.Printf("avg discharge: %.2f%%/h\n", avgRate)
+
+	if hasWorst {
+		dur := worst.End.Sub(worst.Start)
+		fmt.Printf(
+			"worst session: %s ~ %s  (%dh%02dm)  %.2f%%/h\n",
+			worst.Start.Format("01/02 15:04"),
+			worst.End.Format("15:04"),
+			int(dur.Hours()), int(dur.Minutes())%60,
+			worstRate,
+		)
+	} else {
+		fmt.Println("worst session: --")
+	}
 }
 
 func loadPowerEvents(since, until time.Time) ([]PowerEvent, error) {

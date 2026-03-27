@@ -35,6 +35,13 @@ type ProcessUsage struct {
 	RawMem  string
 }
 
+type ThermalStats struct {
+	Count int
+	Min   int
+	Max   int
+	Avg   int
+}
+
 func main() {
 	var since, until time.Time
 
@@ -69,6 +76,13 @@ func main() {
 		fmt.Fprintln(os.Stderr, "warning: could not load resource logs:", err)
 	}
 
+	thermal, err := loadThermalStats(since, until)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "warning: could not load thermal logs:", err)
+	}
+
+	specs := loadSpecs()
+
 	sessions := buildSessions(events, points, since, until)
 
 	fmt.Println("=== sessions ===")
@@ -89,6 +103,8 @@ func main() {
 	}
 
 	printSummary(sessions)
+	printSpecs(specs)
+	printThermals(thermal)
 	printProcesses(processes)
 }
 
@@ -223,4 +239,29 @@ func printProcesses(processes []ProcessUsage) {
 		p := processes[i]
 		fmt.Printf("[%d] %s  cpu %.0fs  mem %.1fM\n", i+1, p.Name, p.CPUTime, p.MemPeak)
 	}
+}
+
+func printSpecs(specs HardwareSpecs) {
+	if specs.isEmpty() {
+		return
+	}
+
+	fmt.Println()
+	fmt.Println("=== specs ===")
+	fmt.Printf("os: %s\n", specs.OS)
+	fmt.Printf("device: %s\n", specs.Device)
+	fmt.Printf("cpu: %s\n", specs.CPU)
+	fmt.Printf("ram: %s\n", specs.RAM)
+	fmt.Printf("battery: %s\n", specs.Battery)
+}
+
+func printThermals(stats ThermalStats) {
+	if stats.Count == 0 {
+		return
+	}
+
+	fmt.Println()
+	fmt.Println("=== thermal ===")
+	fmt.Printf("samples: %d\n", stats.Count)
+	fmt.Printf("min/max/avg: %d / %d / %d C\n", stats.Min, stats.Max, stats.Avg)
 }

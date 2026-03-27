@@ -82,3 +82,26 @@ type ProcessImpact struct {
 	DrainWatts float64
 	Level      LoadLevel
 }
+
+type ChargingSession struct {
+	Start       time.Time
+	End         time.Time
+	StartPct    float64
+	EndPct      float64
+	AvgChargeW  float64
+	PeakChargeW float64
+}
+
+type SystemEvent struct {
+	Time time.Time
+	Type string
+	Desc string
+}
+
+type DailyRecord struct {
+	Date      time.Time
+	ActiveMin int
+	Discharge float64
+	Charge    float64
+	AvgWatts  float64
+}

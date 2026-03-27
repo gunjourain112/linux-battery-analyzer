@@ -60,6 +60,9 @@ func main() {
 	sessions := service.BuildSessions(events, points, since, until)
 	profile := service.BuildDischargeProfile(rates)
 	impacts := service.BuildProcessImpacts(processes, rates)
+	charging := service.BuildChargingSessions(points, rates)
+	daily := service.BuildDailySummary(sessions, charging)
+	systemEvents := service.BuildSystemEvents(events, points)
 
 	fmt.Println("=== sessions ===")
 	for i, s := range sessions {
@@ -79,6 +82,9 @@ func main() {
 	}
 
 	printSummary(sessions)
+	printDaily(daily)
+	printCharging(charging)
+	printSystemEvents(systemEvents)
 	printProfile(profile)
 	printImpacts(impacts)
 	printSpecs(specs)
@@ -192,6 +198,68 @@ func printImpacts(impacts []domain.ProcessImpact) {
 	for i := 0; i < limit; i++ {
 		p := impacts[i]
 		fmt.Printf("[%d] %s  %.1fW  %s\n", i+1, p.Process.Name, p.DrainWatts, levelLabel(p.Level))
+	}
+}
+
+func printDaily(records []domain.DailyRecord) {
+	if len(records) == 0 {
+		return
+	}
+
+	fmt.Println()
+	fmt.Println("=== daily summary ===")
+	for _, r := range records {
+		fmt.Printf("%s  active %dm  discharge %.0f%%  charge %.0f%%  avg %.1fW\n",
+			r.Date.Format("01/02"),
+			r.ActiveMin,
+			r.Discharge,
+			r.Charge,
+			r.AvgWatts,
+		)
+	}
+}
+
+func printCharging(sessions []domain.ChargingSession) {
+	if len(sessions) == 0 {
+		return
+	}
+
+	limit := 5
+	if len(sessions) < limit {
+		limit = len(sessions)
+	}
+
+	fmt.Println()
+	fmt.Println("=== charging sessions ===")
+	for i := 0; i < limit; i++ {
+		s := sessions[i]
+		dur := s.End.Sub(s.Start)
+		fmt.Printf("[%d] %s ~ %s  (%dh%02dm)  %.0f%% → %.0f%%  avg %.1fW peak %.1fW\n",
+			i+1,
+			s.Start.Format("01/02 15:04"),
+			s.End.Format("15:04"),
+			int(dur.Hours()), int(dur.Minutes())%60,
+			s.StartPct, s.EndPct,
+			s.AvgChargeW, s.PeakChargeW,
+		)
+	}
+}
+
+func printSystemEvents(events []domain.SystemEvent) {
+	if len(events) == 0 {
+		return
+	}
+
+	limit := 8
+	if len(events) < limit {
+		limit = len(events)
+	}
+
+	fmt.Println()
+	fmt.Println("=== system events ===")
+	for i := 0; i < limit; i++ {
+		ev := events[i]
+		fmt.Printf("[%d] %s  %s\n", i+1, ev.Time.Format("01/02 15:04"), ev.Desc)
 	}
 }
 

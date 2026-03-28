@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	resourceLine = regexp.MustCompile(`^.*?: (.+): Consumed (.*) CPU time, (.*) memory peak\.$`)
+	resourceLine = regexp.MustCompile(`^.*?: (.+?): Consumed (.*) CPU time, (.*) memory peak\.$`)
 	thermalLine  = regexp.MustCompile(`\(([0-9]+) C\)`)
 )
 
@@ -54,15 +54,7 @@ func LoadRateHistory(since, until time.Time) ([]domain.RatePoint, error) {
 }
 
 func LoadPowerEvents(since, until time.Time) ([]domain.PowerEvent, error) {
-	args := []string{"--no-pager", "-o", "short-iso"}
-	if !since.IsZero() {
-		args = append(args, "--since", since.Format("2006-01-02"))
-	}
-	if !until.IsZero() {
-		args = append(args, "--until", until.Format("2006-01-02 23:59:59"))
-	}
-
-	out, err := exec.Command("journalctl", args...).CombinedOutput()
+	out, err := journalctlOutput(since, "suspending system|pm: suspend entry|system resumed|pm: early resume|powering off|reached target power-off|startup finished in")
 	if err != nil && len(strings.TrimSpace(string(out))) == 0 {
 		return nil, err
 	}
@@ -71,11 +63,8 @@ func LoadPowerEvents(since, until time.Time) ([]domain.PowerEvent, error) {
 	scanner := bufio.NewScanner(strings.NewReader(string(out)))
 	for scanner.Scan() {
 		line := scanner.Text()
-		if len(line) < 25 {
-			continue
-		}
-		t, err := time.ParseInLocation("2006-01-02T15:04:05-0700", line[:25], time.Local)
-		if err != nil {
+		t, ok := parseJournalTime(line)
+		if !ok || (!until.IsZero() && t.After(until)) {
 			continue
 		}
 		low := strings.ToLower(line)
@@ -102,15 +91,7 @@ func LoadPowerEvents(since, until time.Time) ([]domain.PowerEvent, error) {
 }
 
 func LoadProcessUsage(since, until time.Time) ([]domain.ProcessUsage, error) {
-	args := []string{"--no-pager", "-o", "short-iso"}
-	if !since.IsZero() {
-		args = append(args, "--since", since.Format("2006-01-02"))
-	}
-	if !until.IsZero() {
-		args = append(args, "--until", until.Format("2006-01-02 23:59:59"))
-	}
-
-	out, err := exec.Command("journalctl", args...).CombinedOutput()
+	out, err := journalctlOutput(since, "memory peak")
 	if err != nil && len(strings.TrimSpace(string(out))) == 0 {
 		return nil, err
 	}
@@ -119,44 +100,21 @@ func LoadProcessUsage(since, until time.Time) ([]domain.ProcessUsage, error) {
 	scanner := bufio.NewScanner(strings.NewReader(string(out)))
 	for scanner.Scan() {
 		line := scanner.Text()
-		if len(line) < 25 || !strings.Contains(line, "memory peak") {
+		t, ok := parseJournalTime(line)
+		if !ok || (!until.IsZero() && t.After(until)) {
 			continue
 		}
 
-		match := resourceLine.FindStringSubmatch(line)
-		if len(match) < 4 {
-			continue
+		if proc, ok := parseProcessUsageLine(line, t); ok {
+			processes = append(processes, proc)
 		}
-
-		t, err := time.ParseInLocation("2006-01-02T15:04:05-0700", line[:25], time.Local)
-		if err != nil {
-			continue
-		}
-
-		processes = append(processes, domain.ProcessUsage{
-			Time:    t,
-			Name:    normalizeProcessName(match[1]),
-			RawName: match[1],
-			CPUTime: parseCPUTime(match[2]),
-			MemPeak: parseMemPeak(match[3]),
-			RawCPU:  match[2],
-			RawMem:  match[3],
-		})
 	}
 
 	return processes, scanner.Err()
 }
 
 func LoadThermalStats(since, until time.Time) (domain.ThermalStats, error) {
-	args := []string{"--no-pager", "-o", "short-iso"}
-	if !since.IsZero() {
-		args = append(args, "--since", since.Format("2006-01-02"))
-	}
-	if !until.IsZero() {
-		args = append(args, "--until", until.Format("2006-01-02 23:59:59"))
-	}
-
-	out, err := exec.Command("journalctl", args...).CombinedOutput()
+	out, err := journalctlOutput(since, "Thermal Zone")
 	if err != nil && len(strings.TrimSpace(string(out))) == 0 {
 		return domain.ThermalStats{}, err
 	}
@@ -166,15 +124,12 @@ func LoadThermalStats(since, until time.Time) (domain.ThermalStats, error) {
 	scanner := bufio.NewScanner(strings.NewReader(string(out)))
 	for scanner.Scan() {
 		line := scanner.Text()
-		if len(line) < 25 || !strings.Contains(line, "Thermal Zone") {
+		t, ok := parseJournalTime(line)
+		if !ok || (!until.IsZero() && t.After(until)) {
 			continue
 		}
-		match := thermalLine.FindStringSubmatch(line)
-		if len(match) < 2 {
-			continue
-		}
-		temp, err := strconv.Atoi(match[1])
-		if err != nil {
+		temp, ok := parseThermalLine(line)
+		if !ok {
 			continue
 		}
 		if stats.Count == 0 || temp < stats.Min {
@@ -193,6 +148,59 @@ func LoadThermalStats(since, until time.Time) (domain.ThermalStats, error) {
 		stats.Avg = sum / stats.Count
 	}
 	return stats, nil
+}
+
+func journalctlOutput(since time.Time, grep string) ([]byte, error) {
+	args := []string{"--no-pager", "-o", "short-iso"}
+	if !since.IsZero() {
+		args = append(args, "--since", since.Format("2006-01-02"))
+	}
+	if grep != "" {
+		args = append(args, "--grep", grep)
+	}
+	return exec.Command("journalctl", args...).CombinedOutput()
+}
+
+func parseJournalTime(line string) (time.Time, bool) {
+	if len(line) < 25 {
+		return time.Time{}, false
+	}
+	t, err := time.Parse(time.RFC3339, line[:25])
+	if err != nil {
+		return time.Time{}, false
+	}
+	return t, true
+}
+
+func parseProcessUsageLine(line string, t time.Time) (domain.ProcessUsage, bool) {
+	if !strings.Contains(line, "memory peak") {
+		return domain.ProcessUsage{}, false
+	}
+	match := resourceLine.FindStringSubmatch(line)
+	if len(match) < 4 {
+		return domain.ProcessUsage{}, false
+	}
+	return domain.ProcessUsage{
+		Time:    t,
+		Name:    normalizeProcessName(match[1]),
+		RawName: match[1],
+		CPUTime: parseCPUTime(match[2]),
+		MemPeak: parseMemPeak(match[3]),
+		RawCPU:  match[2],
+		RawMem:  match[3],
+	}, true
+}
+
+func parseThermalLine(line string) (int, bool) {
+	match := thermalLine.FindStringSubmatch(line)
+	if len(match) < 2 {
+		return 0, false
+	}
+	temp, err := strconv.Atoi(match[1])
+	if err != nil {
+		return 0, false
+	}
+	return temp, true
 }
 
 func LoadSpecs() domain.HardwareSpecs {

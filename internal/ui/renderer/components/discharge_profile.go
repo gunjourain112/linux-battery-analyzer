@@ -2,6 +2,7 @@ package components
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/lipgloss/table"
@@ -18,7 +19,7 @@ func DischargeProfile(tr i18n.Translator, profile domain.DischargeProfile) strin
 	tbl := table.New().
 		Border(lipgloss.NormalBorder()).
 		BorderStyle(theme.Default.Subtle()).
-		Headers(tr.Get(i18n.BucketHeader), tr.Get(i18n.CountHeader), tr.Get(i18n.RatioHeader), tr.Get(i18n.AvgWHeader)).
+		Headers(tr.Get(i18n.BucketHeader), tr.Get(i18n.CountHeader), tr.Get(i18n.RatioHeader), tr.Get(i18n.AvgWHeader), tr.Get(i18n.DurationHeader)).
 		StyleFunc(func(r, c int) lipgloss.Style {
 			if r == -1 {
 				return theme.Default.Header()
@@ -38,7 +39,15 @@ func DischargeProfile(tr i18n.Translator, profile domain.DischargeProfile) strin
 			fmt.Sprintf("%d", b.Count),
 			fmt.Sprintf("%.0f%%", b.Ratio),
 			fmt.Sprintf("%.1f", b.AvgWatts),
+			formatDurationFromHours(b.EstHours),
 		)
 	}
 	return tbl.Render()
+}
+
+func formatDurationFromHours(hours float64) string {
+	if hours <= 0 {
+		return "--"
+	}
+	return formatDuration(time.Duration(hours * float64(time.Hour)))
 }

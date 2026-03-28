@@ -22,9 +22,27 @@ func BuildDischargeProfile(ratePoints []domain.RatePoint) domain.DischargeProfil
 		{Label: "heavy (12W+)"},
 	}
 
-	var total int
+	if len(ratePoints) == 0 {
+		return domain.DischargeProfile{Buckets: buckets}
+	}
+
+	points := make([]domain.RatePoint, 0, len(ratePoints))
 	for _, p := range ratePoints {
 		if p.State != "discharging" || p.Watts <= 0 {
+			continue
+		}
+		points = append(points, p)
+	}
+	if len(points) == 0 {
+		return domain.DischargeProfile{Buckets: buckets}
+	}
+
+	sort.Slice(points, func(i, j int) bool { return points[i].Time.Before(points[j].Time) })
+
+	var totalWeight float64
+	for i, p := range points {
+		weight := dischargingSpan(points, i)
+		if weight <= 0 {
 			continue
 		}
 
@@ -41,21 +59,44 @@ func BuildDischargeProfile(ratePoints []domain.RatePoint) domain.DischargeProfil
 		}
 
 		buckets[idx].Count++
-		buckets[idx].AvgWatts += p.Watts
-		total++
+		buckets[idx].AvgWatts += p.Watts * weight.Hours()
+		buckets[idx].EstHours += weight.Hours()
+		totalWeight += weight.Hours()
 	}
 
 	for i := range buckets {
-		if buckets[i].Count > 0 {
-			buckets[i].AvgWatts /= float64(buckets[i].Count)
-			buckets[i].Ratio = float64(buckets[i].Count) / float64(total) * 100
+		if buckets[i].EstHours > 0 {
+			buckets[i].AvgWatts /= buckets[i].EstHours
+			buckets[i].Ratio = buckets[i].EstHours / totalWeight * 100
 		}
 	}
 
 	return domain.DischargeProfile{
 		Buckets:    buckets,
-		TotalCount: total,
+		TotalCount: len(points),
 	}
+}
+
+func dischargingSpan(points []domain.RatePoint, idx int) time.Duration {
+	if len(points) == 1 {
+		return 30 * time.Second
+	}
+
+	if idx < len(points)-1 {
+		d := points[idx+1].Time.Sub(points[idx].Time)
+		if d > 0 {
+			return d
+		}
+	}
+
+	if idx > 0 {
+		d := points[idx].Time.Sub(points[idx-1].Time)
+		if d > 0 {
+			return d
+		}
+	}
+
+	return 0
 }
 
 func BuildProcessImpacts(processes []domain.ProcessUsage, ratePoints []domain.RatePoint) []domain.ProcessImpact {

@@ -28,6 +28,7 @@ const (
 	ReportProcessSummary   Key = "report_process_summary"
 	ReportOptimizationTips Key = "report_optimization_tips"
 	ReportInsightDashboard Key = "report_insight_dashboard"
+	ReportAIContext        Key = "report_ai_context"
 	ReportProcessImpacts   Key = "report_process_impacts"
 	ReportSystemEvents     Key = "report_system_events"
 	ReportSpecs            Key = "report_specs"
@@ -44,6 +45,7 @@ const (
 	NoProcessSummaryData   Key = "no_process_summary_data"
 	NoOptimizationTips     Key = "no_optimization_tips"
 	NoInsightDashboardData Key = "no_insight_dashboard_data"
+	NoAIContextData        Key = "no_ai_context_data"
 	NoProcessImpactData    Key = "no_process_impact_data"
 	NoSystemEvents         Key = "no_system_events"
 	NoHardwareSpecs        Key = "no_hardware_specs"
@@ -58,6 +60,8 @@ const (
 	TipThermal             Key = "tip_thermal"
 	TipDrainRate           Key = "tip_drain_rate"
 	TipNoObviousIssue      Key = "tip_no_obvious_issue"
+	AIContextLead          Key = "ai_context_lead"
+	AIContextAsk           Key = "ai_context_ask"
 	AvgDischarge           Key = "avg_discharge"
 	WorstSession           Key = "worst_session"
 	StartHeader            Key = "start_header"
@@ -147,6 +151,7 @@ var english = map[Key]string{
 	ReportProcessSummary:   "Process Summary",
 	ReportOptimizationTips: "Optimization Tips",
 	ReportInsightDashboard: "Insight Dashboard",
+	ReportAIContext:        "AI Context",
 	ReportProcessImpacts:   "Process Impacts",
 	ReportSystemEvents:     "System Events",
 	ReportSpecs:            "Specs",
@@ -163,6 +168,7 @@ var english = map[Key]string{
 	NoProcessSummaryData:   "no process summary data",
 	NoOptimizationTips:     "no optimization tips",
 	NoInsightDashboardData: "no insight dashboard data",
+	NoAIContextData:        "no ai context data",
 	NoProcessImpactData:    "no process impact data",
 	NoSystemEvents:         "no system events",
 	NoHardwareSpecs:        "no hardware specs",
@@ -177,6 +183,8 @@ var english = map[Key]string{
 	TipThermal:             "Peak temperature reached %d°C; sustained heat usually tracks higher drain",
 	TipDrainRate:           "Average session drain is %.2f%%/h; power saver or a lighter workload helps",
 	TipNoObviousIssue:      "No obvious optimization issue stands out in this window",
+	AIContextLead:          "Paste this context into an AI chat to continue analysis.",
+	AIContextAsk:           "Focus on drain causes, runtime scenarios, and concrete battery-saving actions.",
 	AvgDischarge:           "avg discharge",
 	WorstSession:           "worst session",
 	StartHeader:            "Start",
@@ -241,6 +249,7 @@ var korean = map[Key]string{
 	ReportProcessSummary:   "프로세스 요약",
 	ReportOptimizationTips: "최적화 팁",
 	ReportInsightDashboard: "인사이트 대시보드",
+	ReportAIContext:        "AI 컨텍스트",
 	ReportProcessImpacts:   "프로세스 영향",
 	ReportSystemEvents:     "시스템 이벤트",
 	ReportSpecs:            "사양",
@@ -257,6 +266,7 @@ var korean = map[Key]string{
 	NoProcessSummaryData:   "프로세스 요약 데이터 없음",
 	NoOptimizationTips:     "최적화 팁 없음",
 	NoInsightDashboardData: "인사이트 대시보드 데이터 없음",
+	NoAIContextData:        "AI 컨텍스트 데이터 없음",
 	NoProcessImpactData:    "프로세스 영향 데이터 없음",
 	NoSystemEvents:         "시스템 이벤트 없음",
 	NoHardwareSpecs:        "하드웨어 사양 없음",
@@ -271,6 +281,8 @@ var korean = map[Key]string{
 	TipThermal:             "최고 온도가 %d°C입니다. 지속 발열은 방전 증가와 자주 같이 옵니다",
 	TipDrainRate:           "평균 세션 방전율이 %.2f%%/h입니다. 절전 모드나 작업량 조절이 도움이 됩니다",
 	TipNoObviousIssue:      "이 구간에서는 뚜렷한 최적화 포인트가 보이지 않습니다",
+	AIContextLead:          "이 컨텍스트를 AI 채팅에 붙여넣어 추가 분석을 진행하세요.",
+	AIContextAsk:           "방전 원인, 사용 시나리오, 배터리 절감 행동을 중심으로 봐주세요.",
 	AvgDischarge:           "평균 방전",
 	WorstSession:           "가장 빠른 방전 세션",
 	StartHeader:            "시작",

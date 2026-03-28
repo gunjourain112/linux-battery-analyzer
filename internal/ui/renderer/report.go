@@ -57,6 +57,7 @@ func Render(d ReportData) string {
 	b.WriteString(renderSection(tr.Get(i18n.ReportSystemEvents), components.SystemEvents(tr, d.SystemEvents)))
 	b.WriteString(renderSection(tr.Get(i18n.ReportSpecs), components.Specs(tr, d.Specs)))
 	b.WriteString(renderSection(tr.Get(i18n.ReportThermals), components.Thermals(tr, d.Thermal)))
+	b.WriteString(renderSection(tr.Get(i18n.ReportAIContext), components.AIContext(tr, d.Config, d.Specs, d.Sessions, d.BatteryHistory, d.Processes, d.ProcessImpacts, d.Discharge, d.Thermal)))
 
 	return b.String()
 }

@@ -8,18 +8,18 @@ import (
 )
 
 const (
-	profileThresholdIdle   = 3.0
-	profileThresholdLight  = 7.0
-	profileThresholdMedium = 12.0
+	profileThresholdIdle   = 4.0
+	profileThresholdLight  = 8.0
+	profileThresholdMedium = 15.0
 	processMatchWindow     = 30 * time.Minute
 )
 
 func BuildDischargeProfile(ratePoints []domain.RatePoint) domain.DischargeProfile {
 	buckets := []domain.LoadBucket{
-		{Label: "idle (<3W)"},
-		{Label: "light (3-7W)"},
-		{Label: "medium (7-12W)"},
-		{Label: "heavy (12W+)"},
+		{Label: profileBucketLabel(0)},
+		{Label: profileBucketLabel(1)},
+		{Label: profileBucketLabel(2)},
+		{Label: profileBucketLabel(3)},
 	}
 
 	if len(ratePoints) == 0 {
@@ -155,5 +155,18 @@ func classifyLoad(watts float64) domain.LoadLevel {
 		return domain.LoadLevelMedium
 	default:
 		return domain.LoadLevelHeavy
+	}
+}
+
+func profileBucketLabel(idx int) string {
+	switch idx {
+	case 0:
+		return "idle (<4W)"
+	case 1:
+		return "light (4-8W)"
+	case 2:
+		return "medium (8-15W)"
+	default:
+		return "heavy (15W+)"
 	}
 }

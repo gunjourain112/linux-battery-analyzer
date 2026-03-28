@@ -7,6 +7,8 @@ import (
 	"github.com/gunjourain112/notebook-battery-analyzer/internal/domain"
 )
 
+const sessionStartFuzz = time.Hour
+
 func BuildSessions(events []domain.PowerEvent, points []domain.BatteryPoint, since, until time.Time) []domain.Session {
 	sort.Slice(events, func(i, j int) bool { return events[i].Time.Before(events[j].Time) })
 
@@ -22,8 +24,7 @@ func BuildSessions(events []domain.PowerEvent, points []domain.BatteryPoint, sin
 		case "sleep", "shutdown":
 			if !start.IsZero() {
 				s := domain.Session{Start: start, End: ev.Time}
-				s.StartPct = batteryAt(points, start)
-				s.EndPct = batteryAt(points, ev.Time)
+				adjustSessionStart(&s, points)
 				if s.End.Sub(s.Start) > time.Minute {
 					sessions = append(sessions, s)
 				}
@@ -42,8 +43,7 @@ func BuildSessions(events []domain.PowerEvent, points []domain.BatteryPoint, sin
 			end = until
 		}
 		s := domain.Session{Start: start, End: end}
-		s.StartPct = batteryAt(points, start)
-		s.EndPct = batteryAt(points, end)
+		adjustSessionStart(&s, points)
 		sessions = append(sessions, s)
 	}
 
@@ -76,4 +76,34 @@ func batteryAt(points []domain.BatteryPoint, t time.Time) float64 {
 		}
 	}
 	return best
+}
+
+func adjustSessionStart(s *domain.Session, points []domain.BatteryPoint) {
+	window := batteryWindow(points, s.Start, s.End)
+	if len(window) > 0 {
+		if window[0].Time.Sub(s.Start) > sessionStartFuzz {
+			s.Start = window[0].Time
+			if s.End.Sub(s.Start) <= time.Minute {
+				return
+			}
+		}
+		s.StartPct = window[0].Percentage
+		s.EndPct = window[len(window)-1].Percentage
+		return
+	}
+
+	s.StartPct = batteryAt(points, s.Start)
+	s.EndPct = batteryAt(points, s.End)
+}
+
+func batteryWindow(points []domain.BatteryPoint, start, end time.Time) []domain.BatteryPoint {
+	window := make([]domain.BatteryPoint, 0)
+	for _, p := range points {
+		if p.Time.Before(start) || p.Time.After(end) {
+			continue
+		}
+		window = append(window, p)
+	}
+	sort.Slice(window, func(i, j int) bool { return window[i].Time.Before(window[j].Time) })
+	return window
 }

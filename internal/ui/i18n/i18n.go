@@ -7,11 +7,16 @@ type Key string
 const (
 	AppTitle               Key = "app_title"
 	ChooseLanguage         Key = "choose_language"
+	ChooseRange            Key = "choose_range"
 	LanguageKo             Key = "language_ko"
 	LanguageEn             Key = "language_en"
+	RangeLast7             Key = "range_last_7"
+	RangeLast30            Key = "range_last_30"
+	RangeCustom            Key = "range_custom"
 	SincePrompt            Key = "since_prompt"
 	UntilPrompt            Key = "until_prompt"
 	EnterToContinue        Key = "enter_to_continue"
+	EnterToSelect          Key = "enter_to_select"
 	EnterToRunTabToSwitch  Key = "enter_to_run_tab_to_switch"
 	InvalidSinceDate       Key = "invalid_since_date"
 	InvalidUntilDate       Key = "invalid_until_date"
@@ -130,11 +135,16 @@ func (t Translator) Get(key Key) string {
 var english = map[Key]string{
 	AppTitle:               "Notebook Battery Analyzer",
 	ChooseLanguage:         "Choose language",
+	ChooseRange:            "Choose period",
 	LanguageKo:             "Korean",
 	LanguageEn:             "English",
+	RangeLast7:             "Last 7 days",
+	RangeLast30:            "Last 30 days",
+	RangeCustom:            "Custom range",
 	SincePrompt:            "since: ",
 	UntilPrompt:            "until: ",
 	EnterToContinue:        "enter to continue",
+	EnterToSelect:          "enter to select",
 	EnterToRunTabToSwitch:  "enter to run, tab to switch",
 	InvalidSinceDate:       "invalid since date",
 	InvalidUntilDate:       "invalid until date",
@@ -228,11 +238,16 @@ var english = map[Key]string{
 var korean = map[Key]string{
 	AppTitle:               "Notebook Battery Analyzer",
 	ChooseLanguage:         "언어 선택",
+	ChooseRange:            "기간 선택",
 	LanguageKo:             "한국어",
 	LanguageEn:             "영어",
+	RangeLast7:             "최근 7일",
+	RangeLast30:            "최근 30일",
+	RangeCustom:            "직접 입력",
 	SincePrompt:            "시작일: ",
 	UntilPrompt:            "종료일: ",
 	EnterToContinue:        "Enter: 다음",
+	EnterToSelect:          "Enter: 선택",
 	EnterToRunTabToSwitch:  "Enter: 실행, Tab: 전환",
 	InvalidSinceDate:       "시작일이 올바르지 않습니다",
 	InvalidUntilDate:       "종료일이 올바르지 않습니다",

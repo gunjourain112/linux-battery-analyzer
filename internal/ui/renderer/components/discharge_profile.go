@@ -6,18 +6,19 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/lipgloss/table"
 	"github.com/gunjourain112/notebook-battery-analyzer/internal/domain"
+	"github.com/gunjourain112/notebook-battery-analyzer/internal/ui/i18n"
 	"github.com/gunjourain112/notebook-battery-analyzer/internal/ui/theme"
 )
 
-func DischargeProfile(profile domain.DischargeProfile) string {
+func DischargeProfile(tr i18n.Translator, profile domain.DischargeProfile) string {
 	if profile.TotalCount == 0 {
-		return theme.Default.Subtle().Render("no discharge profile")
+		return theme.Default.Subtle().Render(tr.Get(i18n.NoDischargeProfile))
 	}
 
 	tbl := table.New().
 		Border(lipgloss.NormalBorder()).
 		BorderStyle(theme.Default.Subtle()).
-		Headers("Bucket", "Count", "Ratio", "Avg W").
+		Headers(tr.Get(i18n.BucketHeader), tr.Get(i18n.CountHeader), tr.Get(i18n.RatioHeader), tr.Get(i18n.AvgWHeader)).
 		StyleFunc(func(r, c int) lipgloss.Style {
 			if r == -1 {
 				return theme.Default.Header()

@@ -6,18 +6,19 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/lipgloss/table"
 	"github.com/gunjourain112/notebook-battery-analyzer/internal/domain"
+	"github.com/gunjourain112/notebook-battery-analyzer/internal/ui/i18n"
 	"github.com/gunjourain112/notebook-battery-analyzer/internal/ui/theme"
 )
 
-func Sessions(sessions []domain.Session) string {
+func Sessions(tr i18n.Translator, sessions []domain.Session) string {
 	if len(sessions) == 0 {
-		return theme.Default.Subtle().Render("no sessions")
+		return theme.Default.Subtle().Render(tr.Get(i18n.NoSessions))
 	}
 
 	tbl := table.New().
 		Border(lipgloss.NormalBorder()).
 		BorderStyle(theme.Default.Subtle()).
-		Headers("Start", "End", "Duration", "Drain", "Rate").
+		Headers(tr.Get(i18n.StartHeader), tr.Get(i18n.EndHeader), tr.Get(i18n.DurationHeader), tr.Get(i18n.DrainHeader), tr.Get(i18n.RateHeader)).
 		StyleFunc(func(r, c int) lipgloss.Style {
 			if r == -1 {
 				return theme.Default.Header()

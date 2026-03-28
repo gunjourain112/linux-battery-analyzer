@@ -8,6 +8,7 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/gunjourain112/notebook-battery-analyzer/internal/domain"
+	"github.com/gunjourain112/notebook-battery-analyzer/internal/ui/i18n"
 )
 
 type state int
@@ -30,7 +31,7 @@ type Model struct {
 
 func New() Model {
 	since := textinput.New()
-	since.Prompt = "since: "
+	since.Prompt = i18n.New("ko").Get(i18n.SincePrompt)
 	since.Placeholder = "YYYY-MM-DD"
 	since.SetValue(time.Now().AddDate(0, 0, -7).Format("2006-01-02"))
 	since.Focus()
@@ -38,7 +39,7 @@ func New() Model {
 	since.Width = 16
 
 	until := textinput.New()
-	until.Prompt = "until: "
+	until.Prompt = i18n.New("ko").Get(i18n.UntilPrompt)
 	until.Placeholder = "YYYY-MM-DD"
 	until.SetValue(time.Now().Format("2006-01-02"))
 	until.CharLimit = 10
@@ -82,20 +83,25 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) View() string {
+	m = m.localize()
+	tr := i18n.New(m.config.Language)
+
 	if m.done {
-		return fmt.Sprintf("language: %s\nsince: %s\nuntil: %s\n",
-			m.config.Language,
-			m.config.Since.Format("2006-01-02"),
-			m.config.Until.Format("2006-01-02"),
+		return fmt.Sprintf("%s: %s\n%s: %s\n%s: %s\n",
+			tr.Get(i18n.LanguageLabel), m.config.Language,
+			tr.Get(i18n.SinceLabel), m.config.Since.Format("2006-01-02"),
+			tr.Get(i18n.UntilLabel), m.config.Until.Format("2006-01-02"),
 		)
 	}
 
 	var b strings.Builder
-	b.WriteString("notebook battery analyzer\n\n")
+	b.WriteString(tr.Get(i18n.AppTitle))
+	b.WriteString("\n\n")
 
 	if m.step == stateLang {
-		b.WriteString("choose language\n")
-		opts := []string{"ko", "en"}
+		b.WriteString(tr.Get(i18n.ChooseLanguage))
+		b.WriteString("\n")
+		opts := []string{tr.Get(i18n.LanguageKo), tr.Get(i18n.LanguageEn)}
 		for i, opt := range opts {
 			prefix := "  "
 			if i == m.langIdx {
@@ -103,7 +109,8 @@ func (m Model) View() string {
 			}
 			b.WriteString(prefix + opt + "\n")
 		}
-		b.WriteString("\nenter to continue")
+		b.WriteString("\n")
+		b.WriteString(tr.Get(i18n.EnterToContinue))
 		return b.String()
 	}
 
@@ -111,7 +118,8 @@ func (m Model) View() string {
 		b.WriteString(m.since.View())
 		b.WriteString("\n")
 		b.WriteString(m.until.View())
-		b.WriteString("\nenter to run, tab to switch")
+		b.WriteString("\n")
+		b.WriteString(tr.Get(i18n.EnterToRunTabToSwitch))
 		if m.err != "" {
 			b.WriteString("\n")
 			b.WriteString(m.err)
@@ -137,6 +145,7 @@ func (m Model) updateLanguage(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		} else {
 			m.config.Language = "en"
 		}
+		m = m.localize()
 		m.step = stateSince
 		m.since.Focus()
 		m.until.Blur()
@@ -161,12 +170,12 @@ func (m Model) updateDate(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case "enter":
 		since, err := time.ParseInLocation("2006-01-02", strings.TrimSpace(m.since.Value()), time.Local)
 		if err != nil {
-			m.err = "invalid since date"
+			m.err = i18n.New(m.config.Language).Get(i18n.InvalidSinceDate)
 			return m, nil
 		}
 		until, err := time.ParseInLocation("2006-01-02", strings.TrimSpace(m.until.Value()), time.Local)
 		if err != nil {
-			m.err = "invalid until date"
+			m.err = i18n.New(m.config.Language).Get(i18n.InvalidUntilDate)
 			return m, nil
 		}
 		m.config.Since = since
@@ -196,4 +205,11 @@ func Run() (domain.Config, error) {
 		return domain.Config{}, fmt.Errorf("unexpected model type")
 	}
 	return m.config, nil
+}
+
+func (m Model) localize() Model {
+	tr := i18n.New(m.config.Language)
+	m.since.Prompt = tr.Get(i18n.SincePrompt)
+	m.until.Prompt = tr.Get(i18n.UntilPrompt)
+	return m
 }

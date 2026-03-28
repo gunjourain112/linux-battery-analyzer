@@ -6,12 +6,13 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/lipgloss/table"
 	"github.com/gunjourain112/notebook-battery-analyzer/internal/domain"
+	"github.com/gunjourain112/notebook-battery-analyzer/internal/ui/i18n"
 	"github.com/gunjourain112/notebook-battery-analyzer/internal/ui/theme"
 )
 
-func ProcessImpacts(impacts []domain.ProcessImpact) string {
+func ProcessImpacts(tr i18n.Translator, impacts []domain.ProcessImpact) string {
 	if len(impacts) == 0 {
-		return theme.Default.Subtle().Render("no process impact data")
+		return theme.Default.Subtle().Render(tr.Get(i18n.NoProcessImpactData))
 	}
 
 	limit := len(impacts)
@@ -22,7 +23,7 @@ func ProcessImpacts(impacts []domain.ProcessImpact) string {
 	tbl := table.New().
 		Border(lipgloss.NormalBorder()).
 		BorderStyle(theme.Default.Subtle()).
-		Headers("Process", "Drain W", "Level", "CPU s", "Mem M").
+		Headers(tr.Get(i18n.ProcessHeader), tr.Get(i18n.DrainWHeader), tr.Get(i18n.LevelHeader), tr.Get(i18n.CPUHeader), tr.Get(i18n.MemHeader)).
 		StyleFunc(func(r, c int) lipgloss.Style {
 			if r == -1 {
 				return theme.Default.Header()
@@ -38,7 +39,7 @@ func ProcessImpacts(impacts []domain.ProcessImpact) string {
 		tbl.Row(
 			p.Process.Name,
 			fmt.Sprintf("%.1f", p.DrainWatts),
-			levelString(p.Level),
+			levelString(tr, p.Level),
 			fmt.Sprintf("%.0f", p.Process.CPUTime),
 			fmt.Sprintf("%.1f", p.Process.MemPeak),
 		)

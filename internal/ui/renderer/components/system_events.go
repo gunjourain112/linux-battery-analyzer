@@ -4,12 +4,13 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/lipgloss/table"
 	"github.com/gunjourain112/notebook-battery-analyzer/internal/domain"
+	"github.com/gunjourain112/notebook-battery-analyzer/internal/ui/i18n"
 	"github.com/gunjourain112/notebook-battery-analyzer/internal/ui/theme"
 )
 
-func SystemEvents(events []domain.SystemEvent) string {
+func SystemEvents(tr i18n.Translator, events []domain.SystemEvent) string {
 	if len(events) == 0 {
-		return theme.Default.Subtle().Render("no system events")
+		return theme.Default.Subtle().Render(tr.Get(i18n.NoSystemEvents))
 	}
 
 	limit := len(events)
@@ -20,7 +21,7 @@ func SystemEvents(events []domain.SystemEvent) string {
 	tbl := table.New().
 		Border(lipgloss.NormalBorder()).
 		BorderStyle(theme.Default.Subtle()).
-		Headers("Time", "Type", "Description").
+		Headers(tr.Get(i18n.TimeHeader), tr.Get(i18n.TypeHeader), tr.Get(i18n.DescriptionHeader)).
 		StyleFunc(func(r, c int) lipgloss.Style {
 			if r == -1 {
 				return theme.Default.Header()

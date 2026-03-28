@@ -4,12 +4,13 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/lipgloss/table"
 	"github.com/gunjourain112/notebook-battery-analyzer/internal/domain"
+	"github.com/gunjourain112/notebook-battery-analyzer/internal/ui/i18n"
 	"github.com/gunjourain112/notebook-battery-analyzer/internal/ui/theme"
 )
 
-func Specs(specs domain.HardwareSpecs) string {
+func Specs(tr i18n.Translator, specs domain.HardwareSpecs) string {
 	if specs.IsEmpty() {
-		return theme.Default.Subtle().Render("no hardware specs")
+		return theme.Default.Subtle().Render(tr.Get(i18n.NoHardwareSpecs))
 	}
 
 	tbl := table.New().
@@ -23,19 +24,19 @@ func Specs(specs domain.HardwareSpecs) string {
 		})
 
 	if specs.OS != "" {
-		tbl.Row("OS", specs.OS)
+		tbl.Row(tr.Get(i18n.OSHeader), specs.OS)
 	}
 	if specs.Device != "" {
-		tbl.Row("Device", specs.Device)
+		tbl.Row(tr.Get(i18n.DeviceHeader), specs.Device)
 	}
 	if specs.CPU != "" {
-		tbl.Row("CPU", specs.CPU)
+		tbl.Row(tr.Get(i18n.CPUHeader), specs.CPU)
 	}
 	if specs.RAM != "" {
-		tbl.Row("RAM", specs.RAM)
+		tbl.Row(tr.Get(i18n.RAMHeader), specs.RAM)
 	}
 	if specs.Battery != "" {
-		tbl.Row("Battery", specs.Battery)
+		tbl.Row(tr.Get(i18n.BatteryHeader), specs.Battery)
 	}
 
 	return tbl.Render()

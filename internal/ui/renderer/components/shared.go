@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gunjourain112/notebook-battery-analyzer/internal/domain"
+	"github.com/gunjourain112/notebook-battery-analyzer/internal/ui/i18n"
 )
 
 func RenderRange(since, until time.Time) string {
@@ -63,15 +64,15 @@ func dischargeRate(s domain.Session) float64 {
 	return drain / dur
 }
 
-func levelString(level domain.LoadLevel) string {
+func levelString(tr i18n.Translator, level domain.LoadLevel) string {
 	switch level {
 	case domain.LoadLevelLight:
-		return "light"
+		return tr.Get(i18n.LightLevel)
 	case domain.LoadLevelMedium:
-		return "medium"
+		return tr.Get(i18n.MediumLevel)
 	case domain.LoadLevelHeavy:
-		return "heavy"
+		return tr.Get(i18n.HeavyLevel)
 	default:
-		return "unknown"
+		return tr.Get(i18n.UnknownLevel)
 	}
 }

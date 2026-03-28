@@ -39,6 +39,11 @@ func Render(d ReportData) string {
 		b.WriteString(t.Subtle().Render(specsLine))
 		b.WriteString("\n")
 	}
+	if header := components.HeaderSummary(tr, d.Specs, d.Sessions, d.BatteryHistory, d.Discharge, d.Thermal); header != "" {
+		b.WriteString("\n")
+		b.WriteString(header)
+		b.WriteString("\n")
+	}
 	b.WriteString("\n")
 
 	b.WriteString(renderSection(tr.Get(i18n.ReportSummary), components.Summary(tr, d.Sessions, d.Charging, d.SystemEvents)))

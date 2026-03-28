@@ -69,6 +69,10 @@ const (
 	AIContextAsk           Key = "ai_context_ask"
 	AvgDischarge           Key = "avg_discharge"
 	WorstSession           Key = "worst_session"
+	CurrentStatusLabel     Key = "current_status_label"
+	RangeSummaryLabel      Key = "range_summary_label"
+	ActualUseLabel         Key = "actual_use_label"
+	TopDrainSessionLabel   Key = "top_drain_session_label"
 	StartHeader            Key = "start_header"
 	EndHeader              Key = "end_header"
 	DurationHeader         Key = "duration_header"
@@ -204,6 +208,10 @@ var english = map[Key]string{
 	AIContextAsk:           "Focus on drain causes, runtime scenarios, and concrete battery-saving actions.",
 	AvgDischarge:           "avg discharge",
 	WorstSession:           "worst session",
+	CurrentStatusLabel:     "Current",
+	RangeSummaryLabel:      "Range",
+	ActualUseLabel:         "Actual use",
+	TopDrainSessionLabel:   "Top drain session",
 	StartHeader:            "Start",
 	EndHeader:              "End",
 	DurationHeader:         "Duration",
@@ -314,6 +322,10 @@ var korean = map[Key]string{
 	AIContextAsk:           "방전 원인, 사용 시나리오, 배터리 절감 행동을 중심으로 봐주세요.",
 	AvgDischarge:           "평균 방전",
 	WorstSession:           "가장 빠른 방전 세션",
+	CurrentStatusLabel:     "현재",
+	RangeSummaryLabel:      "범위",
+	ActualUseLabel:         "실제 사용",
+	TopDrainSessionLabel:   "최고 소모 세션",
 	StartHeader:            "시작",
 	EndHeader:              "종료",
 	DurationHeader:         "지속시간",

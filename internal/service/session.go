@@ -8,6 +8,7 @@ import (
 )
 
 const sessionStartFuzz = time.Hour
+const sessionMergeGap = 30 * time.Minute
 
 func BuildSessions(events []domain.PowerEvent, points []domain.BatteryPoint, since, until time.Time) []domain.Session {
 	sort.Slice(events, func(i, j int) bool { return events[i].Time.Before(events[j].Time) })
@@ -47,7 +48,7 @@ func BuildSessions(events []domain.PowerEvent, points []domain.BatteryPoint, sin
 		sessions = append(sessions, s)
 	}
 
-	return sessions
+	return mergeSessions(sessions)
 }
 
 func DischargeRate(s domain.Session) float64 {
@@ -106,4 +107,35 @@ func batteryWindow(points []domain.BatteryPoint, start, end time.Time) []domain.
 	}
 	sort.Slice(window, func(i, j int) bool { return window[i].Time.Before(window[j].Time) })
 	return window
+}
+
+func mergeSessions(sessions []domain.Session) []domain.Session {
+	if len(sessions) < 2 {
+		return sessions
+	}
+
+	sort.Slice(sessions, func(i, j int) bool {
+		if sessions[i].Start.Equal(sessions[j].Start) {
+			return sessions[i].End.Before(sessions[j].End)
+		}
+		return sessions[i].Start.Before(sessions[j].Start)
+	})
+
+	merged := make([]domain.Session, 0, len(sessions))
+	cur := sessions[0]
+	for _, next := range sessions[1:] {
+		if !next.Start.After(cur.End) || next.Start.Sub(cur.End) <= sessionMergeGap {
+			if next.End.After(cur.End) {
+				cur.End = next.End
+			}
+			if next.EndPct > 0 {
+				cur.EndPct = next.EndPct
+			}
+			continue
+		}
+		merged = append(merged, cur)
+		cur = next
+	}
+	merged = append(merged, cur)
+	return merged
 }

@@ -27,6 +27,8 @@ const (
 	ReportSystemEvents     Key = "report_system_events"
 	ReportSpecs            Key = "report_specs"
 	ReportThermals         Key = "report_thermals"
+	BatteryGraph           Key = "battery_graph"
+	UnifiedTimeline        Key = "unified_timeline"
 	NoSessions             Key = "no_sessions"
 	NoDailyRecords         Key = "no_daily_records"
 	NoChargingSessions     Key = "no_charging_sessions"
@@ -56,6 +58,9 @@ const (
 	CPUHeader              Key = "cpu_header"
 	MemHeader              Key = "mem_header"
 	TimeHeader             Key = "time_header"
+	HeatHeader             Key = "heat_header"
+	PowerHeader            Key = "power_header"
+	EventHeader            Key = "event_header"
 	TypeHeader             Key = "type_header"
 	DescriptionHeader      Key = "description_header"
 	SamplesHeader          Key = "samples_header"
@@ -120,6 +125,8 @@ var english = map[Key]string{
 	ReportSystemEvents:     "System Events",
 	ReportSpecs:            "Specs",
 	ReportThermals:         "Thermals",
+	BatteryGraph:           "Battery Graph",
+	UnifiedTimeline:        "Unified Timeline",
 	NoSessions:             "no sessions",
 	NoDailyRecords:         "no daily records",
 	NoChargingSessions:     "no charging sessions",
@@ -149,6 +156,9 @@ var english = map[Key]string{
 	CPUHeader:              "CPU s",
 	MemHeader:              "Mem M",
 	TimeHeader:             "Time",
+	HeatHeader:             "Temp",
+	PowerHeader:            "Power",
+	EventHeader:            "Event",
 	TypeHeader:             "Type",
 	DescriptionHeader:      "Description",
 	SamplesHeader:          "Samples",
@@ -188,6 +198,8 @@ var korean = map[Key]string{
 	ReportSystemEvents:     "시스템 이벤트",
 	ReportSpecs:            "사양",
 	ReportThermals:         "온도",
+	BatteryGraph:           "배터리 그래프",
+	UnifiedTimeline:        "통합 타임라인",
 	NoSessions:             "세션 없음",
 	NoDailyRecords:         "일별 기록 없음",
 	NoChargingSessions:     "충전 세션 없음",
@@ -217,6 +229,9 @@ var korean = map[Key]string{
 	CPUHeader:              "CPU 초",
 	MemHeader:              "메모리 M",
 	TimeHeader:             "시간",
+	HeatHeader:             "온도",
+	PowerHeader:            "전력",
+	EventHeader:            "이벤트",
 	TypeHeader:             "유형",
 	DescriptionHeader:      "설명",
 	SamplesHeader:          "샘플",

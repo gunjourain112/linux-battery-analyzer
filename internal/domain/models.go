@@ -111,3 +111,15 @@ type DailyRecord struct {
 	Charge    float64
 	AvgWatts  float64
 }
+
+type DetailedTimelineRow struct {
+	Time        time.Time
+	BatteryPct  float64
+	PowerWatts  float64
+	ChargeState string
+	PowerState  string
+	AvgMemMB    float64
+	AvgTempC    float64
+	ActiveProcs []string
+	Events      []string
+}

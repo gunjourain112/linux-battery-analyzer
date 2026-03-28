@@ -12,6 +12,7 @@ const (
 	profileThresholdLight  = 8.0
 	profileThresholdMedium = 15.0
 	processMatchWindow     = 30 * time.Minute
+	timelineBucketSize     = 30 * time.Minute
 )
 
 func BuildDischargeProfile(ratePoints []domain.RatePoint) domain.DischargeProfile {
@@ -169,4 +170,128 @@ func profileBucketLabel(idx int) string {
 	default:
 		return "heavy (15W+)"
 	}
+}
+
+func BuildDetailedTimeline(points []domain.BatteryPoint, rates []domain.RatePoint, events []domain.SystemEvent, processes []domain.ProcessUsage, thermal domain.ThermalStats) []domain.DetailedTimelineRow {
+	type bucket struct {
+		t        time.Time
+		lastPct  float64
+		powerSum float64
+		powerCnt int
+		events   []string
+		procs    []string
+	}
+
+	if len(points) == 0 {
+		return nil
+	}
+
+	bucketMap := make(map[int64]*bucket)
+	bucketKey := func(t time.Time) int64 {
+		return t.Unix() / int64(timelineBucketSize.Seconds())
+	}
+	ensure := func(t time.Time) *bucket {
+		key := bucketKey(t)
+		if b, ok := bucketMap[key]; ok {
+			return b
+		}
+		b := &bucket{t: t.Truncate(timelineBucketSize)}
+		bucketMap[key] = b
+		return b
+	}
+
+	sort.Slice(points, func(i, j int) bool { return points[i].Time.Before(points[j].Time) })
+	for _, p := range points {
+		b := ensure(p.Time)
+		b.lastPct = p.Percentage
+	}
+
+	sort.Slice(rates, func(i, j int) bool { return rates[i].Time.Before(rates[j].Time) })
+	for _, rp := range rates {
+		if rp.State != "discharging" || rp.Watts <= 0 {
+			continue
+		}
+		b := ensure(rp.Time)
+		b.powerSum += rp.Watts
+		b.powerCnt++
+	}
+
+	for _, ev := range events {
+		b := ensure(ev.Time)
+		switch ev.Type {
+		case "sleep":
+			b.events = append(b.events, "sleep")
+		case "resume":
+			b.events = append(b.events, "resume")
+		case "shutdown":
+			b.events = append(b.events, "shutdown")
+		case "boot":
+			b.events = append(b.events, "boot")
+		}
+	}
+
+	for _, p := range processes {
+		if p.Time.IsZero() {
+			continue
+		}
+		b := ensure(p.Time)
+		if len(b.procs) < 3 {
+			b.procs = append(b.procs, p.Name)
+		}
+	}
+
+	rows := make([]domain.DetailedTimelineRow, 0, len(bucketMap))
+	for _, b := range bucketMap {
+		row := domain.DetailedTimelineRow{
+			Time:       b.t,
+			BatteryPct: b.lastPct,
+		}
+		if b.powerCnt > 0 {
+			row.PowerWatts = b.powerSum / float64(b.powerCnt)
+		}
+		row.ChargeState = dominantChargeState(points, b.t)
+		row.PowerState = dominantPowerState(events, b.t)
+		row.ActiveProcs = append(row.ActiveProcs, b.procs...)
+		row.Events = append(row.Events, b.events...)
+		if thermal.Count > 0 {
+			// thermal summary is lightweight here; attach average later in renderer if needed
+		}
+		rows = append(rows, row)
+	}
+
+	sort.Slice(rows, func(i, j int) bool { return rows[i].Time.Before(rows[j].Time) })
+	return rows
+}
+
+func dominantChargeState(points []domain.BatteryPoint, t time.Time) string {
+	best := ""
+	bestDelta := time.Duration(1<<63 - 1)
+	for _, p := range points {
+		d := absDur(p.Time.Sub(t))
+		if d < bestDelta {
+			bestDelta = d
+			best = p.State
+		}
+	}
+	return best
+}
+
+func dominantPowerState(events []domain.SystemEvent, t time.Time) string {
+	best := ""
+	bestDelta := time.Duration(1<<63 - 1)
+	for _, ev := range events {
+		d := absDur(ev.Time.Sub(t))
+		if d < bestDelta {
+			bestDelta = d
+			best = ev.Type
+		}
+	}
+	return best
+}
+
+func absDur(d time.Duration) time.Duration {
+	if d < 0 {
+		return -d
+	}
+	return d
 }

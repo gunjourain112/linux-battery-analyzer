@@ -12,6 +12,8 @@ import (
 type ReportData struct {
 	Config         domain.Config
 	Sessions       []domain.Session
+	Detailed       []domain.DetailedTimelineRow
+	BatteryHistory []domain.BatteryPoint
 	Charging       []domain.ChargingSession
 	Daily          []domain.DailyRecord
 	SystemEvents   []domain.SystemEvent
@@ -40,6 +42,8 @@ func Render(d ReportData) string {
 	b.WriteString("\n")
 
 	b.WriteString(renderSection(tr.Get(i18n.ReportSummary), components.Summary(tr, d.Sessions, d.Charging, d.SystemEvents)))
+	b.WriteString(renderSection(tr.Get(i18n.BatteryGraph), components.BatteryGraph(d.BatteryHistory)))
+	b.WriteString(renderSection(tr.Get(i18n.UnifiedTimeline), components.UnifiedTimeline(d.Detailed, &tr)))
 	b.WriteString(renderSection(tr.Get(i18n.ReportSessions), components.Sessions(tr, d.Sessions)))
 	b.WriteString(renderSection(tr.Get(i18n.ReportDaily), components.Daily(tr, d.Daily)))
 	b.WriteString(renderSection(tr.Get(i18n.ReportCharging), components.Charging(tr, d.Charging)))

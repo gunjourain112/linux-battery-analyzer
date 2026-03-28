@@ -53,10 +53,13 @@ func main() {
 	charging := service.BuildChargingSessions(points, rates)
 	daily := service.BuildDailySummary(sessions, charging)
 	systemEvents := service.BuildSystemEvents(events, points)
+	detailed := service.BuildDetailedTimeline(points, rates, systemEvents, processes, thermal)
 
 	report := renderer.ReportData{
 		Config:         conf,
 		Sessions:       sessions,
+		Detailed:       detailed,
+		BatteryHistory: points,
 		Charging:       charging,
 		Daily:          daily,
 		SystemEvents:   systemEvents,

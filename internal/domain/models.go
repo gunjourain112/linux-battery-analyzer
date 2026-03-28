@@ -58,6 +58,14 @@ type ThermalStats struct {
 	Avg   int
 }
 
+type ThermalSnapshot struct {
+	Hour  string
+	Min   int
+	Max   int
+	Avg   int
+	Count int
+}
+
 type LoadBucket struct {
 	Label    string
 	Count    int

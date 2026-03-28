@@ -40,7 +40,7 @@ func main() {
 		fmt.Fprintln(os.Stderr, "warning: could not load rate logs:", err)
 	}
 
-	thermal, err := infrastructure.LoadThermalStats(conf.Since, conf.Until)
+	thermal, thermalTimeline, err := infrastructure.LoadThermalStats(conf.Since, conf.Until)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "warning: could not load thermal logs:", err)
 	}
@@ -53,7 +53,7 @@ func main() {
 	charging := service.BuildChargingSessions(points, rates)
 	daily := service.BuildDailySummary(sessions, charging)
 	systemEvents := service.BuildSystemEvents(events, points)
-	detailed := service.BuildDetailedTimeline(points, rates, systemEvents, processes, thermal)
+	detailed := service.BuildDetailedTimeline(points, rates, systemEvents, processes, thermalTimeline)
 
 	report := renderer.ReportData{
 		Config:         conf,
@@ -68,6 +68,7 @@ func main() {
 		Processes:      processes,
 		Specs:          specs,
 		Thermal:        thermal,
+		ThermalTimeline: thermalTimeline,
 	}
 
 	fmt.Print(renderer.Render(report))

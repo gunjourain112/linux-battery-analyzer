@@ -47,6 +47,8 @@ const (
 	ReportSystemEvents     Key = "report_system_events"
 	ReportSpecs            Key = "report_specs"
 	ReportThermals         Key = "report_thermals"
+	ReportDischargeTrend   Key = "report_discharge_trend"
+	ReportThermalTimeline  Key = "report_thermal_timeline"
 	BatteryGraph           Key = "battery_graph"
 	UnifiedTimeline        Key = "unified_timeline"
 	NoSessions             Key = "no_sessions"
@@ -104,6 +106,7 @@ const (
 	HeatHeader             Key = "heat_header"
 	PowerHeader            Key = "power_header"
 	EventHeader            Key = "event_header"
+	StateHeader            Key = "state_header"
 	TypeHeader             Key = "type_header"
 	DescriptionHeader      Key = "description_header"
 	SamplesHeader          Key = "samples_header"
@@ -195,6 +198,8 @@ var english = map[Key]string{
 	ReportSystemEvents:     "System Events",
 	ReportSpecs:            "Specs",
 	ReportThermals:         "Thermals",
+	ReportDischargeTrend:   "Battery Discharge Trend",
+	ReportThermalTimeline:  "Hourly Thermal Trend",
 	BatteryGraph:           "Battery Graph",
 	UnifiedTimeline:        "Unified Timeline",
 	NoSessions:             "no sessions",
@@ -252,6 +257,7 @@ var english = map[Key]string{
 	HeatHeader:             "Temp",
 	PowerHeader:            "Power",
 	EventHeader:            "Event",
+	StateHeader:            "State",
 	TypeHeader:             "Type",
 	DescriptionHeader:      "Description",
 	SamplesHeader:          "Samples",
@@ -318,6 +324,8 @@ var korean = map[Key]string{
 	ReportSystemEvents:     "시스템 이벤트",
 	ReportSpecs:            "사양",
 	ReportThermals:         "온도",
+	ReportDischargeTrend:   "배터리 방전 추이",
+	ReportThermalTimeline:  "시간대별 온도 추이",
 	BatteryGraph:           "배터리 그래프",
 	UnifiedTimeline:        "통합 타임라인",
 	NoSessions:             "세션 없음",
@@ -375,6 +383,7 @@ var korean = map[Key]string{
 	HeatHeader:             "온도",
 	PowerHeader:            "전력",
 	EventHeader:            "이벤트",
+	StateHeader:            "상태",
 	TypeHeader:             "유형",
 	DescriptionHeader:      "설명",
 	SamplesHeader:          "샘플",

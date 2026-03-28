@@ -22,6 +22,7 @@ type ReportData struct {
 	Processes      []domain.ProcessUsage
 	Specs          domain.HardwareSpecs
 	Thermal        domain.ThermalStats
+	ThermalTimeline []domain.ThermalSnapshot
 }
 
 func Render(d ReportData) string {
@@ -49,6 +50,8 @@ func Render(d ReportData) string {
 	b.WriteString(renderSection(tr.Get(i18n.ReportSummary), components.DeviceInfo(tr, d.Config, d.Specs, d.Sessions, d.BatteryHistory, d.Discharge, d.Thermal)))
 	b.WriteString(renderSection(tr.Get(i18n.BatteryGraph), components.BatteryGraph(d.BatteryHistory)))
 	b.WriteString(renderSection(tr.Get(i18n.UnifiedTimeline), components.UnifiedTimeline(d.Detailed, &tr)))
+	b.WriteString(renderSection(tr.Get(i18n.ReportDischargeTrend), components.DischargeTrend(tr, d.Detailed)))
+	b.WriteString(renderSection(tr.Get(i18n.ReportThermalTimeline), components.ThermalTimeline(tr, d.ThermalTimeline)))
 	b.WriteString(renderSection(tr.Get(i18n.ReportSessions), components.Sessions(tr, d.Sessions)))
 	b.WriteString(renderSection(tr.Get(i18n.ReportDaily), components.Daily(tr, d.Daily)))
 	b.WriteString(renderSection(tr.Get(i18n.ReportCharging), components.Charging(tr, d.Charging)))

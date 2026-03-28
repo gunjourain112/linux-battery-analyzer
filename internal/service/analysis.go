@@ -172,12 +172,14 @@ func profileBucketLabel(idx int) string {
 	}
 }
 
-func BuildDetailedTimeline(points []domain.BatteryPoint, rates []domain.RatePoint, events []domain.SystemEvent, processes []domain.ProcessUsage, thermal domain.ThermalStats) []domain.DetailedTimelineRow {
+func BuildDetailedTimeline(points []domain.BatteryPoint, rates []domain.RatePoint, events []domain.SystemEvent, processes []domain.ProcessUsage, thermal []domain.ThermalSnapshot) []domain.DetailedTimelineRow {
 	type bucket struct {
 		t        time.Time
 		lastPct  float64
 		powerSum float64
 		powerCnt int
+		tempSum  float64
+		tempCnt  int
 		events   []string
 		procs    []string
 	}
@@ -240,6 +242,19 @@ func BuildDetailedTimeline(points []domain.BatteryPoint, rates []domain.RatePoin
 		}
 	}
 
+	for _, snap := range thermal {
+		if snap.Count == 0 {
+			continue
+		}
+		for _, b := range bucketMap {
+			if b.t.Format("15:00") != snap.Hour {
+				continue
+			}
+			b.tempSum += float64(snap.Avg)
+			b.tempCnt++
+		}
+	}
+
 	rows := make([]domain.DetailedTimelineRow, 0, len(bucketMap))
 	for _, b := range bucketMap {
 		row := domain.DetailedTimelineRow{
@@ -251,11 +266,11 @@ func BuildDetailedTimeline(points []domain.BatteryPoint, rates []domain.RatePoin
 		}
 		row.ChargeState = dominantChargeState(points, b.t)
 		row.PowerState = dominantPowerState(events, b.t)
+		if b.tempCnt > 0 {
+			row.AvgTempC = b.tempSum / float64(b.tempCnt)
+		}
 		row.ActiveProcs = append(row.ActiveProcs, b.procs...)
 		row.Events = append(row.Events, b.events...)
-		if thermal.Count > 0 {
-			// thermal summary is lightweight here; attach average later in renderer if needed
-		}
 		rows = append(rows, row)
 	}
 

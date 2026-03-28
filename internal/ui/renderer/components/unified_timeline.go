@@ -40,11 +40,15 @@ func UnifiedTimeline(rows []domain.DetailedTimelineRow, tr *i18n.Translator) str
 		if row.PowerWatts > 0 {
 			powerStr = fmt.Sprintf("%.1fW", row.PowerWatts)
 		}
+		tempStr := "--"
+		if row.AvgTempC > 0 {
+			tempStr = fmt.Sprintf("%.0f°C", row.AvgTempC)
+		}
 
 		tt.Row(
 			row.Time.Format("01/02 15:04"),
 			fmt.Sprintf("%.0f%%", row.BatteryPct),
-			"--",
+			tempStr,
 			chargeStateCompact(row.ChargeState),
 			powerStr,
 			strings.Join(row.Events, ", "),

@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -113,13 +114,14 @@ func LoadProcessUsage(since, until time.Time) ([]domain.ProcessUsage, error) {
 	return processes, scanner.Err()
 }
 
-func LoadThermalStats(since, until time.Time) (domain.ThermalStats, error) {
+func LoadThermalStats(since, until time.Time) (domain.ThermalStats, []domain.ThermalSnapshot, error) {
 	out, err := journalctlOutput(since, "Thermal Zone")
 	if err != nil && len(strings.TrimSpace(string(out))) == 0 {
-		return domain.ThermalStats{}, err
+		return domain.ThermalStats{}, nil, err
 	}
 
 	var stats domain.ThermalStats
+	hourly := make(map[string]*thermalBucket)
 	sum := 0
 	scanner := bufio.NewScanner(strings.NewReader(string(out)))
 	for scanner.Scan() {
@@ -132,6 +134,20 @@ func LoadThermalStats(since, until time.Time) (domain.ThermalStats, error) {
 		if !ok {
 			continue
 		}
+		key := t.Format("15:00")
+		b := hourly[key]
+		if b == nil {
+			b = &thermalBucket{}
+			hourly[key] = b
+		}
+		if b.Count == 0 || temp < b.Min {
+			b.Min = temp
+		}
+		if b.Count == 0 || temp > b.Max {
+			b.Max = temp
+		}
+		b.Count++
+		b.Sum += temp
 		if stats.Count == 0 || temp < stats.Min {
 			stats.Min = temp
 		}
@@ -142,12 +158,33 @@ func LoadThermalStats(since, until time.Time) (domain.ThermalStats, error) {
 		sum += temp
 	}
 	if err := scanner.Err(); err != nil {
-		return stats, err
+		return stats, nil, err
 	}
 	if stats.Count > 0 {
 		stats.Avg = sum / stats.Count
 	}
-	return stats, nil
+	snapshots := make([]domain.ThermalSnapshot, 0, len(hourly))
+	for hour, b := range hourly {
+		if b.Count == 0 {
+			continue
+		}
+		snapshots = append(snapshots, domain.ThermalSnapshot{
+			Hour:  hour,
+			Min:   b.Min,
+			Max:   b.Max,
+			Avg:   b.Sum / b.Count,
+			Count: b.Count,
+		})
+	}
+	sort.Slice(snapshots, func(i, j int) bool { return snapshots[i].Hour < snapshots[j].Hour })
+	return stats, snapshots, nil
+}
+
+type thermalBucket struct {
+	Min   int
+	Max   int
+	Sum   int
+	Count int
 }
 
 func journalctlOutput(since time.Time, grep string) ([]byte, error) {

@@ -14,7 +14,7 @@ import (
 func UnifiedTimeline(rows []domain.DetailedTimelineRow, tr *i18n.Translator) string {
 	t := theme.Default
 	if len(rows) == 0 {
-		return t.Subtle().Render(tr.Get(i18n.NoThermalSamples))
+		return t.Subtle().Render(tr.Get(i18n.NoTimelineData))
 	}
 
 	tt := table.New().

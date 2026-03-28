@@ -23,6 +23,8 @@ const (
 	ReportDaily            Key = "report_daily"
 	ReportCharging         Key = "report_charging"
 	ReportDischargeProfile Key = "report_discharge_profile"
+	ReportBatteryHealth    Key = "report_battery_health"
+	ReportScenarioEstimate Key = "report_scenario_estimate"
 	ReportProcessImpacts   Key = "report_process_impacts"
 	ReportSystemEvents     Key = "report_system_events"
 	ReportSpecs            Key = "report_specs"
@@ -33,10 +35,14 @@ const (
 	NoDailyRecords         Key = "no_daily_records"
 	NoChargingSessions     Key = "no_charging_sessions"
 	NoDischargeProfile     Key = "no_discharge_profile"
+	NoBatteryHealthData    Key = "no_battery_health_data"
+	NoScenarioEstimateData Key = "no_scenario_estimate_data"
+	NoTimelineData         Key = "no_timeline_data"
 	NoProcessImpactData    Key = "no_process_impact_data"
 	NoSystemEvents         Key = "no_system_events"
 	NoHardwareSpecs        Key = "no_hardware_specs"
 	NoThermalSamples       Key = "no_thermal_samples"
+	ScenarioEstimateNote   Key = "scenario_estimate_note"
 	AvgDischarge           Key = "avg_discharge"
 	WorstSession           Key = "worst_session"
 	StartHeader            Key = "start_header"
@@ -121,6 +127,8 @@ var english = map[Key]string{
 	ReportDaily:            "Daily",
 	ReportCharging:         "Charging",
 	ReportDischargeProfile: "Discharge Profile",
+	ReportBatteryHealth:    "Battery Health",
+	ReportScenarioEstimate: "Scenario Estimate",
 	ReportProcessImpacts:   "Process Impacts",
 	ReportSystemEvents:     "System Events",
 	ReportSpecs:            "Specs",
@@ -131,10 +139,14 @@ var english = map[Key]string{
 	NoDailyRecords:         "no daily records",
 	NoChargingSessions:     "no charging sessions",
 	NoDischargeProfile:     "no discharge profile",
+	NoBatteryHealthData:    "no battery health data",
+	NoScenarioEstimateData: "no scenario estimate data",
+	NoTimelineData:         "no timeline data",
 	NoProcessImpactData:    "no process impact data",
 	NoSystemEvents:         "no system events",
 	NoHardwareSpecs:        "no hardware specs",
 	NoThermalSamples:       "no thermal samples",
+	ScenarioEstimateNote:   "estimate based on observed battery drain over this window, not design capacity",
 	AvgDischarge:           "avg discharge",
 	WorstSession:           "worst session",
 	StartHeader:            "Start",
@@ -194,6 +206,8 @@ var korean = map[Key]string{
 	ReportDaily:            "일별",
 	ReportCharging:         "충전",
 	ReportDischargeProfile: "방전 프로파일",
+	ReportBatteryHealth:    "배터리 상태",
+	ReportScenarioEstimate: "시나리오 추정",
 	ReportProcessImpacts:   "프로세스 영향",
 	ReportSystemEvents:     "시스템 이벤트",
 	ReportSpecs:            "사양",
@@ -204,10 +218,14 @@ var korean = map[Key]string{
 	NoDailyRecords:         "일별 기록 없음",
 	NoChargingSessions:     "충전 세션 없음",
 	NoDischargeProfile:     "방전 프로파일 없음",
+	NoBatteryHealthData:    "배터리 상태 데이터 없음",
+	NoScenarioEstimateData: "시나리오 추정 데이터 없음",
+	NoTimelineData:         "타임라인 데이터 없음",
 	NoProcessImpactData:    "프로세스 영향 데이터 없음",
 	NoSystemEvents:         "시스템 이벤트 없음",
 	NoHardwareSpecs:        "하드웨어 사양 없음",
 	NoThermalSamples:       "온도 샘플 없음",
+	ScenarioEstimateNote:   "이 추정은 이 구간의 배터리 방전 추세를 기준으로 계산했으며, 설계 용량은 사용하지 않습니다",
 	AvgDischarge:           "평균 방전",
 	WorstSession:           "가장 빠른 방전 세션",
 	StartHeader:            "시작",

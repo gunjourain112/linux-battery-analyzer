@@ -48,6 +48,8 @@ func Render(d ReportData) string {
 	b.WriteString(renderSection(tr.Get(i18n.ReportDaily), components.Daily(tr, d.Daily)))
 	b.WriteString(renderSection(tr.Get(i18n.ReportCharging), components.Charging(tr, d.Charging)))
 	b.WriteString(renderSection(tr.Get(i18n.ReportDischargeProfile), components.DischargeProfile(tr, d.Discharge)))
+	b.WriteString(renderSection(tr.Get(i18n.ReportBatteryHealth), components.BatteryHealth(d.Specs, d.BatteryHistory, tr)))
+	b.WriteString(renderSection(tr.Get(i18n.ReportScenarioEstimate), components.ScenarioEstimate(d.Discharge, d.BatteryHistory, tr)))
 	b.WriteString(renderSection(tr.Get(i18n.ReportProcessImpacts), components.ProcessImpacts(tr, d.ProcessImpacts)))
 	b.WriteString(renderSection(tr.Get(i18n.ReportSystemEvents), components.SystemEvents(tr, d.SystemEvents)))
 	b.WriteString(renderSection(tr.Get(i18n.ReportSpecs), components.Specs(tr, d.Specs)))

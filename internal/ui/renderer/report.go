@@ -46,21 +46,19 @@ func Render(d ReportData) string {
 	}
 	b.WriteString("\n")
 
-	b.WriteString(renderSection(tr.Get(i18n.ReportSummary), components.Summary(tr, d.Sessions, d.Charging, d.SystemEvents)))
+	b.WriteString(renderSection(tr.Get(i18n.ReportSummary), components.DeviceInfo(tr, d.Config, d.Specs, d.Sessions, d.BatteryHistory, d.Discharge, d.Thermal)))
 	b.WriteString(renderSection(tr.Get(i18n.BatteryGraph), components.BatteryGraph(d.BatteryHistory)))
 	b.WriteString(renderSection(tr.Get(i18n.UnifiedTimeline), components.UnifiedTimeline(d.Detailed, &tr)))
 	b.WriteString(renderSection(tr.Get(i18n.ReportSessions), components.Sessions(tr, d.Sessions)))
 	b.WriteString(renderSection(tr.Get(i18n.ReportDaily), components.Daily(tr, d.Daily)))
 	b.WriteString(renderSection(tr.Get(i18n.ReportCharging), components.Charging(tr, d.Charging)))
 	b.WriteString(renderSection(tr.Get(i18n.ReportDischargeProfile), components.DischargeProfile(tr, d.Discharge)))
-	b.WriteString(renderSection(tr.Get(i18n.ReportBatteryHealth), components.BatteryHealth(d.Specs, d.BatteryHistory, tr)))
 	b.WriteString(renderSection(tr.Get(i18n.ReportScenarioEstimate), components.ScenarioEstimate(d.Discharge, d.Specs, d.BatteryHistory, tr)))
 	b.WriteString(renderSection(tr.Get(i18n.ReportProcessSummary), components.ProcessSummary(tr, d.Processes)))
 	b.WriteString(renderSection(tr.Get(i18n.ReportOptimizationTips), components.OptimizationTips(tr, d.Sessions, d.ProcessImpacts, d.Discharge, d.Thermal)))
 	b.WriteString(renderSection(tr.Get(i18n.ReportInsightDashboard), components.InsightDashboard(tr, d.Sessions, d.Processes, d.ProcessImpacts, d.Discharge, d.Thermal)))
 	b.WriteString(renderSection(tr.Get(i18n.ReportProcessImpacts), components.ProcessImpacts(tr, d.ProcessImpacts)))
 	b.WriteString(renderSection(tr.Get(i18n.ReportSystemEvents), components.SystemEvents(tr, d.SystemEvents)))
-	b.WriteString(renderSection(tr.Get(i18n.ReportSpecs), components.Specs(tr, d.Specs)))
 	b.WriteString(renderSection(tr.Get(i18n.ReportThermals), components.Thermals(tr, d.Thermal)))
 	b.WriteString(renderSection(tr.Get(i18n.ReportAIContext), components.AIContext(tr, d.Config, d.Specs, d.Sessions, d.BatteryHistory, d.Processes, d.ProcessImpacts, d.Discharge, d.Thermal)))
 

@@ -96,7 +96,7 @@ func estimateBatteryRange(currentPct float64, capacityWh float64, profile domain
 func totalSessionDuration(sessions []domain.Session) time.Duration {
 	var total time.Duration
 	for _, s := range sessions {
-		if s.End.After(s.Start) && s.StartPct > s.EndPct && (s.StartPct-s.EndPct) >= 0.5 {
+		if s.End.After(s.Start) {
 			total += s.End.Sub(s.Start)
 		}
 	}

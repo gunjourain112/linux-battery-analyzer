@@ -24,6 +24,15 @@ const (
 	SinceLabel             Key = "since_label"
 	UntilLabel             Key = "until_label"
 	ReportSummary          Key = "report_summary"
+	DeviceSpecsSection     Key = "device_specs_section"
+	BatteryHealthSection   Key = "battery_health_section"
+	AnalysisSummarySection Key = "analysis_summary_section"
+	AnalysisPeriodHeader   Key = "analysis_period_header"
+	ActualUseHeader        Key = "actual_use_header"
+	BatteryStateHeader     Key = "battery_state_header"
+	AvgLoadHeader          Key = "avg_load_header"
+	TempRangeHeader        Key = "temp_range_header"
+	ExpectedRemainHeader   Key = "expected_remain_header"
 	ReportSessions         Key = "report_sessions"
 	ReportDaily            Key = "report_daily"
 	ReportCharging         Key = "report_charging"
@@ -162,7 +171,16 @@ var english = map[Key]string{
 	LanguageLabel:          "language",
 	SinceLabel:             "since",
 	UntilLabel:             "until",
-	ReportSummary:          "Summary",
+	ReportSummary:          "1. Device & Health Info",
+	DeviceSpecsSection:     "Device Specs",
+	BatteryHealthSection:   "Battery Health",
+	AnalysisSummarySection: "Analysis Summary",
+	AnalysisPeriodHeader:   "Analysis Period",
+	ActualUseHeader:        "Actual use",
+	BatteryStateHeader:     "Battery state",
+	AvgLoadHeader:          "Avg load",
+	TempRangeHeader:        "Temp range",
+	ExpectedRemainHeader:   "Expected remain",
 	ReportSessions:         "Sessions",
 	ReportDaily:            "Daily",
 	ReportCharging:         "Charging",
@@ -276,7 +294,16 @@ var korean = map[Key]string{
 	LanguageLabel:          "언어",
 	SinceLabel:             "시작",
 	UntilLabel:             "종료",
-	ReportSummary:          "요약",
+	ReportSummary:          "1. 기기 및 헬스 정보",
+	DeviceSpecsSection:     "기기 사양",
+	BatteryHealthSection:   "배터리 헬스",
+	AnalysisSummarySection: "분석 세션 요약",
+	AnalysisPeriodHeader:   "분석 기간",
+	ActualUseHeader:        "실제 사용",
+	BatteryStateHeader:     "배터리 상태",
+	AvgLoadHeader:          "평균 방전",
+	TempRangeHeader:        "온도 범위",
+	ExpectedRemainHeader:   "예상 잔여 시간",
 	ReportSessions:         "세션",
 	ReportDaily:            "일별",
 	ReportCharging:         "충전",

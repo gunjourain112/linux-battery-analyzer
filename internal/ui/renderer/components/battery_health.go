@@ -11,20 +11,7 @@ import (
 )
 
 func BatteryHealth(specs domain.HardwareSpecs, points []domain.BatteryPoint, tr i18n.Translator) string {
-	rows := make([][]string, 0, 8)
-
-	if specs.OS != "" {
-		rows = append(rows, []string{tr.Get(i18n.OSHeader), specs.OS})
-	}
-	if specs.Device != "" {
-		rows = append(rows, []string{tr.Get(i18n.DeviceHeader), specs.Device})
-	}
-	if specs.CPU != "" {
-		rows = append(rows, []string{tr.Get(i18n.CPUHeader), specs.CPU})
-	}
-	if specs.RAM != "" {
-		rows = append(rows, []string{tr.Get(i18n.RAMHeader), specs.RAM})
-	}
+	rows := make([][]string, 0, 6)
 	if specs.Battery != "" {
 		rows = append(rows, []string{tr.Get(i18n.BatteryHeader), specs.Battery})
 	}
@@ -47,7 +34,11 @@ func BatteryHealth(specs domain.HardwareSpecs, points []domain.BatteryPoint, tr 
 	tbl := table.New().
 		Border(lipgloss.NormalBorder()).
 		BorderStyle(theme.Default.Subtle()).
+		Headers(tr.Get(i18n.MetricHeader), tr.Get(i18n.ValueHeader)).
 		StyleFunc(func(r, c int) lipgloss.Style {
+			if r == -1 {
+				return theme.Default.Header()
+			}
 			if c == 0 {
 				return theme.Default.Label()
 			}

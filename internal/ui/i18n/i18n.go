@@ -94,6 +94,10 @@ const (
 	TypeHeader             Key = "type_header"
 	DescriptionHeader      Key = "description_header"
 	SamplesHeader          Key = "samples_header"
+	MetricHeader           Key = "metric_header"
+	ValueHeader            Key = "value_header"
+	CurrentHeader          Key = "current_header"
+	FullHeader             Key = "full_header"
 	MinHeader              Key = "min_header"
 	MaxHeader              Key = "max_header"
 	AvgHeader              Key = "avg_header"
@@ -222,6 +226,10 @@ var english = map[Key]string{
 	TypeHeader:             "Type",
 	DescriptionHeader:      "Description",
 	SamplesHeader:          "Samples",
+	MetricHeader:           "Metric",
+	ValueHeader:            "Value",
+	CurrentHeader:          "Current est.",
+	FullHeader:             "Full est.",
 	MinHeader:              "Min",
 	MaxHeader:              "Max",
 	AvgHeader:              "Avg",
@@ -325,6 +333,10 @@ var korean = map[Key]string{
 	TypeHeader:             "유형",
 	DescriptionHeader:      "설명",
 	SamplesHeader:          "샘플",
+	MetricHeader:           "항목",
+	ValueHeader:            "값",
+	CurrentHeader:          "현재 추정",
+	FullHeader:             "완충 추정",
 	MinHeader:              "최소",
 	MaxHeader:              "최대",
 	AvgHeader:              "평균",

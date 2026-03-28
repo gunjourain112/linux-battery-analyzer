@@ -31,8 +31,8 @@ func ScenarioEstimate(profile domain.DischargeProfile, points []domain.BatteryPo
 			tr.Get(i18n.BucketHeader),
 			tr.Get(i18n.RatioHeader),
 			tr.Get(i18n.AvgWHeader),
-			tr.Get(i18n.DurationHeader),
-			tr.Get(i18n.RateHeader),
+			tr.Get(i18n.CurrentHeader),
+			tr.Get(i18n.FullHeader),
 		).
 		StyleFunc(func(r, c int) lipgloss.Style {
 			if r == -1 {
@@ -66,7 +66,6 @@ func ScenarioEstimate(profile domain.DischargeProfile, points []domain.BatteryPo
 	}
 
 	out := tbl.Render()
-	out += "\n" + theme.Default.Subtle().Render(fmt.Sprintf("  %s: %.2f%%/h", tr.Get(i18n.RateHeader), drainRate))
 	out += "\n" + theme.Default.Subtle().Render(tr.Get(i18n.ScenarioEstimateNote))
 	return out
 }

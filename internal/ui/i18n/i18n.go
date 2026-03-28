@@ -98,6 +98,9 @@ const (
 	ValueHeader            Key = "value_header"
 	CurrentHeader          Key = "current_header"
 	FullHeader             Key = "full_header"
+	DesignCapacityHeader   Key = "design_capacity_header"
+	CurrentCapacityHeader  Key = "current_capacity_header"
+	HealthHeader           Key = "health_header"
 	MinHeader              Key = "min_header"
 	MaxHeader              Key = "max_header"
 	AvgHeader              Key = "avg_header"
@@ -230,6 +233,9 @@ var english = map[Key]string{
 	ValueHeader:            "Value",
 	CurrentHeader:          "Current est.",
 	FullHeader:             "Full est.",
+	DesignCapacityHeader:   "Design capacity",
+	CurrentCapacityHeader:  "Current capacity",
+	HealthHeader:           "Health",
 	MinHeader:              "Min",
 	MaxHeader:              "Max",
 	AvgHeader:              "Avg",
@@ -337,6 +343,9 @@ var korean = map[Key]string{
 	ValueHeader:            "값",
 	CurrentHeader:          "현재 추정",
 	FullHeader:             "완충 추정",
+	DesignCapacityHeader:   "설계 용량",
+	CurrentCapacityHeader:  "현재 용량",
+	HealthHeader:           "헬스",
 	MinHeader:              "최소",
 	MaxHeader:              "최대",
 	AvgHeader:              "평균",

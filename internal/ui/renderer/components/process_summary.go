@@ -18,18 +18,18 @@ func ProcessSummary(tr i18n.Translator, processes []domain.ProcessUsage) string 
 	}
 
 	sort.Slice(aggs, func(i, j int) bool {
-		if aggs[i].Count == aggs[j].Count {
+		if aggs[i].MemPeak == aggs[j].MemPeak {
 			if aggs[i].CPUTime == aggs[j].CPUTime {
-				return aggs[i].MemPeak > aggs[j].MemPeak
+				return aggs[i].Count > aggs[j].Count
 			}
 			return aggs[i].CPUTime > aggs[j].CPUTime
 		}
-		return aggs[i].Count > aggs[j].Count
+		return aggs[i].MemPeak > aggs[j].MemPeak
 	})
 
 	limit := len(aggs)
-	if limit > 6 {
-		limit = 6
+	if limit > 20 {
+		limit = 20
 	}
 
 	tbl := table.New().
@@ -51,10 +51,36 @@ func ProcessSummary(tr i18n.Translator, processes []domain.ProcessUsage) string 
 		tbl.Row(
 			p.Name,
 			fmt.Sprintf("%d", p.Count),
-			fmt.Sprintf("%.0fs", p.CPUTime),
-			fmt.Sprintf("%.1f", p.MemPeak),
+			formatCPUTime(p.CPUTime),
+			formatMemoryPeak(p.MemPeak),
 		)
 	}
 
 	return tbl.Render()
+}
+
+func formatCPUTime(seconds float64) string {
+	if seconds <= 0 {
+		return "--"
+	}
+	h := int(seconds) / 3600
+	m := (int(seconds) % 3600) / 60
+	s := int(seconds) % 60
+	if h > 0 {
+		return fmt.Sprintf("%dh %02dm %02ds", h, m, s)
+	}
+	if m > 0 {
+		return fmt.Sprintf("%dm %02ds", m, s)
+	}
+	return fmt.Sprintf("%ds", s)
+}
+
+func formatMemoryPeak(mb float64) string {
+	if mb <= 0 {
+		return "--"
+	}
+	if mb >= 1024 {
+		return fmt.Sprintf("%.1fG", mb/1024)
+	}
+	return fmt.Sprintf("%.1fM", mb)
 }

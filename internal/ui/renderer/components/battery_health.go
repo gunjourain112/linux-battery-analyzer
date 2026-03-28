@@ -12,8 +12,15 @@ import (
 
 func BatteryHealth(specs domain.HardwareSpecs, points []domain.BatteryPoint, tr i18n.Translator) string {
 	rows := make([][]string, 0, 6)
-	if specs.Battery != "" {
+	if fullWh, designWh, healthPct, ok := parseBatterySpec(specs.Battery); ok {
 		rows = append(rows, []string{tr.Get(i18n.BatteryHeader), specs.Battery})
+		rows = append(rows,
+			[]string{tr.Get(i18n.DesignCapacityHeader), fmt.Sprintf("%.1f Wh", designWh)},
+			[]string{tr.Get(i18n.CurrentCapacityHeader), fmt.Sprintf("%.1f Wh", fullWh)},
+		)
+		if healthPct > 0 {
+			rows = append(rows, []string{tr.Get(i18n.HealthHeader), fmt.Sprintf("%.1f%%", healthPct)})
+		}
 	}
 
 	if start, end, ok := batteryRange(points); ok {

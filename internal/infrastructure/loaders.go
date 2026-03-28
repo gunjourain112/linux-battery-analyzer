@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	resourceLine = regexp.MustCompile(`: (?:app-)?(?:gnome-|flatpak-)?(.*)\.scope: Consumed (.*) CPU time, (.*) memory peak\.`)
+	resourceLine = regexp.MustCompile(`^.*?: (.+): Consumed (.*) CPU time, (.*) memory peak\.$`)
 	thermalLine  = regexp.MustCompile(`\(([0-9]+) C\)`)
 )
 
@@ -62,8 +62,8 @@ func LoadPowerEvents(since, until time.Time) ([]domain.PowerEvent, error) {
 		args = append(args, "--until", until.Format("2006-01-02 23:59:59"))
 	}
 
-	out, err := exec.Command("journalctl", args...).Output()
-	if err != nil {
+	out, err := exec.Command("journalctl", args...).CombinedOutput()
+	if err != nil && len(strings.TrimSpace(string(out))) == 0 {
 		return nil, err
 	}
 
@@ -110,8 +110,8 @@ func LoadProcessUsage(since, until time.Time) ([]domain.ProcessUsage, error) {
 		args = append(args, "--until", until.Format("2006-01-02 23:59:59"))
 	}
 
-	out, err := exec.Command("journalctl", args...).Output()
-	if err != nil {
+	out, err := exec.Command("journalctl", args...).CombinedOutput()
+	if err != nil && len(strings.TrimSpace(string(out))) == 0 {
 		return nil, err
 	}
 
@@ -156,8 +156,8 @@ func LoadThermalStats(since, until time.Time) (domain.ThermalStats, error) {
 		args = append(args, "--until", until.Format("2006-01-02 23:59:59"))
 	}
 
-	out, err := exec.Command("journalctl", args...).Output()
-	if err != nil {
+	out, err := exec.Command("journalctl", args...).CombinedOutput()
+	if err != nil && len(strings.TrimSpace(string(out))) == 0 {
 		return domain.ThermalStats{}, err
 	}
 
@@ -245,7 +245,7 @@ func LoadSpecs() domain.HardwareSpecs {
 	}
 
 	batCmd := `upower -i $(upower -e | grep 'BAT' | head -1) 2>/dev/null | grep -E 'energy-full:|energy-full-design:|cycle-count:|capacity:'`
-	if out, err := exec.Command("sh", "-c", batCmd).Output(); err == nil {
+	if out, err := exec.Command("sh", "-c", batCmd).CombinedOutput(); err == nil || len(strings.TrimSpace(string(out))) > 0 {
 		var full, design, capPct, cycle string
 		for _, line := range strings.Split(string(out), "\n") {
 			fields := strings.Fields(strings.TrimSpace(line))
@@ -281,7 +281,55 @@ func LoadSpecs() domain.HardwareSpecs {
 		}
 	}
 
+	if specs.Battery == "--" {
+		specs.Battery = readBatterySysfs()
+	}
+
 	return specs
+}
+
+func readBatterySysfs() string {
+	ueventPaths, _ := filepath.Glob("/sys/class/power_supply/BAT*/uevent")
+	for _, path := range ueventPaths {
+		data, err := os.ReadFile(path)
+		if err != nil {
+			continue
+		}
+		var full, design, capPct, cycle string
+		for _, line := range strings.Split(string(data), "\n") {
+			switch {
+			case strings.HasPrefix(line, "POWER_SUPPLY_ENERGY_FULL="):
+				full = strings.TrimPrefix(line, "POWER_SUPPLY_ENERGY_FULL=")
+			case strings.HasPrefix(line, "POWER_SUPPLY_ENERGY_FULL_DESIGN="):
+				design = strings.TrimPrefix(line, "POWER_SUPPLY_ENERGY_FULL_DESIGN=")
+			case strings.HasPrefix(line, "POWER_SUPPLY_CAPACITY="):
+				capPct = strings.TrimPrefix(line, "POWER_SUPPLY_CAPACITY=")
+			case strings.HasPrefix(line, "POWER_SUPPLY_CYCLE_COUNT="):
+				cycle = strings.TrimPrefix(line, "POWER_SUPPLY_CYCLE_COUNT=")
+			}
+		}
+		parts := []string{}
+		if full != "" {
+			if wh, err := strconv.ParseFloat(full, 64); err == nil {
+				parts = append(parts, fmt.Sprintf("full %.1fWh", wh/1000000))
+			}
+		}
+		if design != "" {
+			if wh, err := strconv.ParseFloat(design, 64); err == nil {
+				parts = append(parts, fmt.Sprintf("design %.1fWh", wh/1000000))
+			}
+		}
+		if capPct != "" {
+			parts = append(parts, capPct+"%")
+		}
+		if cycle != "" {
+			parts = append(parts, "cycle "+cycle)
+		}
+		if len(parts) > 0 {
+			return strings.Join(parts, ", ")
+		}
+	}
+	return "--"
 }
 
 func parseHistoryFile(path string, since, until time.Time) ([]domain.BatteryPoint, error) {
@@ -377,21 +425,23 @@ func filepathGlob(pattern string) ([]string, error) {
 
 func normalizeProcessName(raw string) string {
 	name := decodeHexEscape(raw)
-	if idx := strings.LastIndex(name, ".scope"); idx >= 0 {
-		name = strings.TrimSuffix(name, ".scope")
+	name = strings.TrimSuffix(name, ".service")
+	name = strings.TrimSuffix(name, ".scope")
+	name = strings.TrimSuffix(name, ".slice")
+	if strings.HasPrefix(name, "dbus-:") {
+		if parts := strings.SplitN(name, "-", 3); len(parts) == 3 {
+			name = parts[2]
+		}
 	}
+	name = strings.TrimPrefix(name, "app-")
+	name = strings.TrimPrefix(name, "flatpak-")
+	name = strings.TrimPrefix(name, "gnome-")
 	if idx := lastHyphenBeforeDigits(name); idx > 0 {
 		name = name[:idx]
 	}
 	if idx := findUUIDStart(name); idx > 0 {
 		name = name[:idx]
 	}
-	if parts := strings.Split(name, "."); len(parts) > 1 {
-		name = parts[len(parts)-1]
-	}
-	name = strings.TrimPrefix(name, "app-")
-	name = strings.TrimPrefix(name, "flatpak-")
-	name = strings.TrimPrefix(name, "gnome-")
 	return strings.ToLower(strings.TrimSpace(name))
 }
 

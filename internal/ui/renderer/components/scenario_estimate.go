@@ -10,9 +10,14 @@ import (
 	"github.com/gunjourain112/notebook-battery-analyzer/internal/ui/theme"
 )
 
-func ScenarioEstimate(profile domain.DischargeProfile, points []domain.BatteryPoint, tr i18n.Translator) string {
-	currentPct, drainRate, ok := observedBatteryTrend(points)
+func ScenarioEstimate(profile domain.DischargeProfile, specs domain.HardwareSpecs, points []domain.BatteryPoint, tr i18n.Translator) string {
+	current, ok := latestBatteryPoint(points)
 	if !ok || profile.TotalCount == 0 {
+		return theme.Default.Subtle().Render(tr.Get(i18n.NoScenarioEstimateData))
+	}
+
+	_, designWh, _, ok := parseBatterySpec(specs.Battery)
+	if !ok || designWh <= 0 {
 		return theme.Default.Subtle().Render(tr.Get(i18n.NoScenarioEstimateData))
 	}
 
@@ -21,8 +26,8 @@ func ScenarioEstimate(profile domain.DischargeProfile, points []domain.BatteryPo
 		return theme.Default.Subtle().Render(tr.Get(i18n.NoScenarioEstimateData))
 	}
 
-	currentHours := currentPct / drainRate
-	fullHours := 100.0 / drainRate
+	currentWh := (current.Percentage / 100.0) * designWh
+	fullWh := designWh
 
 	tbl := table.New().
 		Border(lipgloss.NormalBorder()).
@@ -55,8 +60,8 @@ func ScenarioEstimate(profile domain.DischargeProfile, points []domain.BatteryPo
 			b.Label,
 			fmt.Sprintf("%.0f%%", b.Ratio),
 			fmt.Sprintf("%.1fW", b.AvgWatts),
-			formatDurationFromHours(currentHours*scale),
-			formatDurationFromHours(fullHours*scale),
+			formatDurationFromHours((currentWh/b.AvgWatts)*scale),
+			formatDurationFromHours((fullWh/b.AvgWatts)*scale),
 		)
 		rows++
 	}
@@ -68,30 +73,6 @@ func ScenarioEstimate(profile domain.DischargeProfile, points []domain.BatteryPo
 	out := tbl.Render()
 	out += "\n" + theme.Default.Subtle().Render(tr.Get(i18n.ScenarioEstimateNote))
 	return out
-}
-
-func observedBatteryTrend(points []domain.BatteryPoint) (currentPct float64, drainRate float64, ok bool) {
-	if len(points) < 2 {
-		return 0, 0, false
-	}
-
-	first := points[0]
-	last := points[len(points)-1]
-	if last.Time.Before(first.Time) {
-		first, last = last, first
-	}
-
-	hours := last.Time.Sub(first.Time).Hours()
-	if hours <= 0 {
-		return 0, 0, false
-	}
-
-	drain := first.Percentage - last.Percentage
-	if drain <= 0 {
-		return 0, 0, false
-	}
-
-	return last.Percentage, drain / hours, true
 }
 
 func weightedAverageWatts(profile domain.DischargeProfile) float64 {

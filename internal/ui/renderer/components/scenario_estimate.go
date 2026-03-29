@@ -21,11 +21,6 @@ func ScenarioEstimate(profile domain.DischargeProfile, specs domain.HardwareSpec
 		return theme.Default.Subtle().Render(tr.Get(i18n.NoScenarioEstimateData))
 	}
 
-	observedWatts := weightedAverageWatts(profile)
-	if observedWatts <= 0 {
-		return theme.Default.Subtle().Render(tr.Get(i18n.NoScenarioEstimateData))
-	}
-
 	currentWh := (current.Percentage / 100.0) * designWh
 	fullWh := designWh
 
@@ -55,13 +50,12 @@ func ScenarioEstimate(profile domain.DischargeProfile, specs domain.HardwareSpec
 			continue
 		}
 
-		scale := observedWatts / b.AvgWatts
 		tbl.Row(
 			b.Label,
 			fmt.Sprintf("%.0f%%", b.Ratio),
 			fmt.Sprintf("%.1fW", b.AvgWatts),
-			formatDurationFromHours((currentWh/b.AvgWatts)*scale),
-			formatDurationFromHours((fullWh/b.AvgWatts)*scale),
+			formatDurationFromHours(currentWh/b.AvgWatts),
+			formatDurationFromHours(fullWh/b.AvgWatts),
 		)
 		rows++
 	}

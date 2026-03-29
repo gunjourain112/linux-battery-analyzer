@@ -29,7 +29,7 @@ func HeaderSummary(tr i18n.Translator, specs domain.HardwareSpecs, sessions []do
 	worst := topWorstSession(sessions, designWh)
 
 	lines := []string{
-		fmt.Sprintf("%s %.0f%% %s → %s (%.0f%% / %.1fW 기준)",
+		fmt.Sprintf("%s %.0f%% %s -> %s (%.0f%% / %.1fW 기준)",
 			tr.Get(i18n.CurrentStatusLabel),
 			current.Percentage,
 			batteryStateLabel(current.State),

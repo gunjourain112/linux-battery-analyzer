@@ -139,7 +139,22 @@ func BuildSystemEvents(powerEvents []domain.PowerEvent, points []domain.BatteryP
 	sort.Slice(events, func(i, j int) bool {
 		return events[i].Time.Before(events[j].Time)
 	})
-	return events
+
+	if len(events) == 0 {
+		return events
+	}
+
+	deduped := make([]domain.SystemEvent, 0, len(events))
+	for _, ev := range events {
+		if len(deduped) > 0 {
+			last := deduped[len(deduped)-1]
+			if last.Type == ev.Type && last.Time.Truncate(time.Minute).Equal(ev.Time.Truncate(time.Minute)) {
+				continue
+			}
+		}
+		deduped = append(deduped, ev)
+	}
+	return deduped
 }
 
 func applyChargingRates(sess *domain.ChargingSession, ratePoints []domain.RatePoint) {

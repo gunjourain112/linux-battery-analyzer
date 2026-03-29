@@ -133,7 +133,7 @@ func topWorstSession(sessions []domain.Session, capacityWh float64) string {
 
 	return fmt.Sprintf("%s ~ %s (%s / -%.0f%%p / avg %s)",
 		worst.Start.Format("01/02 15:04"),
-		worst.End.Format("15:04"),
+		worst.End.Format("01/02 15:04"),
 		formatDuration(worst.End.Sub(worst.Start)),
 		worst.StartPct-worst.EndPct,
 		avgWatts,

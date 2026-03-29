@@ -45,7 +45,7 @@ func AnalysisSummary(tr i18n.Translator, config domain.Config, specs domain.Hard
 	rows := [][]string{
 		{tr.Get(i18n.AnalysisPeriodHeader), fmt.Sprintf("%s ~ %s", config.Since.Format("2006-01-02 15:04:05"), config.Until.Format("2006-01-02 15:04:05"))},
 		{tr.Get(i18n.ActualUseHeader), formatDurationCard(totalSessionDuration(sessions))},
-		{tr.Get(i18n.BatteryStateHeader), fmt.Sprintf("%.0f%% (%s)", current.Percentage, current.State)},
+		{tr.Get(i18n.BatteryStateHeader), fmt.Sprintf("%.0f%% %s", current.Percentage, batteryStateLabel(tr, current.State))},
 	}
 	if avg := averageSessionDischargeRate(sessions); avg > 0 {
 		rows = append(rows, []string{tr.Get(i18n.AvgLoadHeader), fmt.Sprintf("%.2f%%/h", avg)})

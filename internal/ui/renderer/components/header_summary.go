@@ -32,7 +32,7 @@ func HeaderSummary(tr i18n.Translator, specs domain.HardwareSpecs, sessions []do
 		fmt.Sprintf("%s %.0f%% %s -> %s (%.0f%% / %.1fW 기준)",
 			tr.Get(i18n.CurrentStatusLabel),
 			current.Percentage,
-			batteryStateLabel(current.State),
+			batteryStateLabel(tr, current.State),
 			currentEstimate,
 			current.Percentage,
 			currentWatts,
@@ -149,13 +149,23 @@ func formatDurationCard(d time.Duration) string {
 	return fmt.Sprintf("%dh %02dm", h, m)
 }
 
-func batteryStateLabel(state string) string {
+func batteryStateLabel(tr i18n.Translator, state string) string {
+	ko := tr.Lang() != "en"
 	switch strings.ToLower(strings.TrimSpace(state)) {
 	case "charging":
+		if ko {
+			return "(충전 중)"
+		}
 		return "(charging)"
 	case "fully-charged":
+		if ko {
+			return "(완충)"
+		}
 		return "(fully-charged)"
 	case "discharging":
+		if ko {
+			return "(방전 중)"
+		}
 		return "(discharging)"
 	default:
 		return "(--)"

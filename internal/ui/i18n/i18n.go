@@ -143,6 +143,10 @@ func New(lang string) Translator {
 	}
 }
 
+func (t Translator) Lang() string {
+	return t.lang
+}
+
 func (t Translator) Get(key Key) string {
 	if t.lang == "en" {
 		if v, ok := english[key]; ok {

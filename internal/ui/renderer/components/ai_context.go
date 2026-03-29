@@ -67,16 +67,51 @@ func batteryWindow(points []domain.BatteryPoint) (current domain.BatteryPoint, s
 	if len(points) == 0 {
 		return domain.BatteryPoint{}, domain.BatteryPoint{}, domain.BatteryPoint{}, false
 	}
-	start = points[0]
-	end = points[len(points)-1]
+
+	current = points[0]
+	for _, p := range points[1:] {
+		if p.Time.After(current.Time) {
+			current = p
+		}
+	}
+
+	start = current
+	end = current
+	found := false
+	for _, p := range points {
+		if isObservedBatteryPoint(p) {
+			if !found {
+				start = p
+				found = true
+			}
+			end = p
+		}
+	}
+	if !found {
+		start = points[0]
+		end = points[len(points)-1]
+		if end.Time.Before(start.Time) {
+			start, end = end, start
+		}
+		if end.Time.Sub(start.Time) <= 0 {
+			return domain.BatteryPoint{}, domain.BatteryPoint{}, domain.BatteryPoint{}, false
+		}
+		return current, start, end, true
+	}
 	if end.Time.Before(start.Time) {
 		start, end = end, start
 	}
-	current = end
 	if end.Time.Sub(start.Time) <= 0 {
 		return domain.BatteryPoint{}, domain.BatteryPoint{}, domain.BatteryPoint{}, false
 	}
 	return current, start, end, true
+}
+
+func isObservedBatteryPoint(p domain.BatteryPoint) bool {
+	if strings.ToLower(strings.TrimSpace(p.State)) == "fully-charged" {
+		return p.Percentage < 99.5
+	}
+	return true
 }
 
 func topProcessLines(processes []domain.ProcessUsage, limit int) []string {

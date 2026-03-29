@@ -55,7 +55,7 @@ func LoadRateHistory(since, until time.Time) ([]domain.RatePoint, error) {
 }
 
 func LoadPowerEvents(since, until time.Time) ([]domain.PowerEvent, error) {
-	out, err := journalctlOutput(since, "suspending system|pm: suspend entry|system resumed|pm: early resume|powering off|reached target power-off|startup finished in")
+	out, err := journalctlOutput(since, "suspending system|pm: suspend entry|system resumed|pm: early resume|powering off|reached target power-off|systemd\\[1\\].*Startup finished in")
 	if err != nil && len(strings.TrimSpace(string(out))) == 0 {
 		return nil, err
 	}
@@ -80,7 +80,7 @@ func LoadPowerEvents(since, until time.Time) ([]domain.PowerEvent, error) {
 		case strings.Contains(low, "powering off"),
 			strings.Contains(low, "reached target power-off"):
 			kind = "shutdown"
-		case strings.Contains(low, "startup finished in"):
+		case strings.Contains(low, "systemd[1]") && strings.Contains(low, "startup finished in"):
 			kind = "boot"
 		}
 		if kind == "" {
